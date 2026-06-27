@@ -31,10 +31,13 @@ export default function ReportScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // REPLACE THIS WITH YOUR ACTUAL IMGBB API KEY
+  // Dynamic Contact States
+  const [phoneNumbers, setPhoneNumbers] = useState<string[]>([""]);
+  const [emails, setEmails] = useState<string[]>([""]);
+  const [reward, setReward] = useState("");
+
   const IMGBB_API_KEY = "612721d402d431da9fa9e05a60c78e04";
 
-  // Free Upload Helper Function
   const uploadImageToImgBB = async (uri: string): Promise<string | null> => {
     try {
       const filename = uri.split("/").pop();
@@ -49,73 +52,76 @@ export default function ReportScreen() {
         {
           method: "POST",
           body: formData,
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
         },
       );
 
       const json = await response.json();
-      if (json.success) {
-        return json.data.url; // Returns the clean web link string
-      } else {
-        console.error("ImgBB Upload Failed: ", json);
-        return null;
-      }
+      return json.success ? json.data.url : null;
     } catch (err) {
-      console.error("Error running network upload: ", err);
+      console.error("Network upload error:", err);
       return null;
     }
   };
 
-  // Gallery Picker
-  const pickImage = async () => {
-    const { status: cameraRollStatus } =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (cameraRollStatus !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "We need storage access permissions to upload pet photos!",
-      );
-      return;
-    }
+  const handleAddPhone = () => setPhoneNumbers([...phoneNumbers, ""]);
+  const handleRemovePhone = (index: number) => {
+    const updated = [...phoneNumbers];
+    updated.splice(index, 1);
+    setPhoneNumbers(updated);
+  };
+  const handlePhoneChange = (text: string, index: number) => {
+    const updated = [...phoneNumbers];
+    updated[index] = text;
+    setPhoneNumbers(updated);
+  };
 
+  const handleAddEmail = () => setEmails([...emails, ""]);
+  const handleRemoveEmail = (index: number) => {
+    const updated = [...emails];
+    updated.splice(index, 1);
+    setEmails(updated);
+  };
+  const handleEmailChange = (text: string, index: number) => {
+    const updated = [...emails];
+    updated[index] = text;
+    setEmails(updated);
+  };
+
+  const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
     });
-
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
     }
   };
 
-  // Camera Handler
   const takePhoto = async () => {
-    const { status: cameraStatus } =
-      await ImagePicker.requestCameraPermissionsAsync();
-    if (cameraStatus !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "We need camera privileges to snapshot immediate sightings!",
-      );
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Denied", "Camera access is required.");
       return;
     }
-
     let result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
     });
-
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
     }
   };
 
   const handleSubmit = async () => {
+    // Filter out blank inputs from our dynamic lists
+    const cleanPhones = phoneNumbers
+      .map((p) => p.trim())
+      .filter((p) => p !== "");
+    const cleanEmails = emails.map((e) => e.trim()).filter((e) => e !== "");
+
     if (!species || !lastSeenLocation || !description) {
       Alert.alert(
         "Missing Info",
@@ -124,19 +130,20 @@ export default function ReportScreen() {
       return;
     }
 
+    if (cleanPhones.length === 0) {
+      Alert.alert(
+        "Contact Required",
+        "Please provide at least one valid phone number.",
+      );
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       let cloudImageUrl = null;
-
       if (imageUri) {
         cloudImageUrl = await uploadImageToImgBB(imageUri);
-        if (!cloudImageUrl) {
-          Alert.alert(
-            "Upload Warning",
-            "Failed to host image online, submitting without photo.",
-          );
-        }
       }
 
       const reportsRef = collection(db, "pet_reports");
@@ -150,7 +157,10 @@ export default function ReportScreen() {
         breed: breed.trim() || "Unknown",
         lastSeenLocation: lastSeenLocation.trim(),
         description: description.trim(),
-        imageUrl: cloudImageUrl, // Permanent URL saved directly into your data doc
+        imageUrl: cloudImageUrl,
+        phoneNumbers: cleanPhones,
+        contactEmails: cleanEmails,
+        reward: status === "lost" ? reward.trim() : "",
         createdAt: new Date().toISOString(),
       });
 
@@ -164,12 +174,14 @@ export default function ReportScreen() {
             setLastSeenLocation("");
             setDescription("");
             setImageUri(null);
+            setPhoneNumbers([""]);
+            setEmails([""]);
+            setReward("");
             router.push("/(tabs)");
           },
         },
       ]);
     } catch (error: any) {
-      console.error("Error adding report: ", error);
       Alert.alert(
         "Submission Failed",
         error.message || "Something went wrong.",
@@ -183,6 +195,7 @@ export default function ReportScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
+      keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.label}>Report Status</Text>
       <View style={styles.statusToggleRow}>
@@ -195,7 +208,6 @@ export default function ReportScreen() {
         >
           <Text style={styles.toggleButtonText}>Lost</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[
             styles.toggleButton,
@@ -207,14 +219,25 @@ export default function ReportScreen() {
         </TouchableOpacity>
       </View>
 
+      {status === "lost" && (
+        <View>
+          <Text style={styles.label}>Reward Offered (Optional)</Text>
+          <TextInput
+            style={[styles.input, { borderColor: "#8A2BE2" }]}
+            placeholder="e.g. Rs. 5,000 or Cash Reward"
+            placeholderTextColor="#aaa"
+            value={reward}
+            onChangeText={setReward}
+          />
+        </View>
+      )}
+
       <Text style={styles.label}>
         Pet Name {status === "found" && "(Optional)"}
       </Text>
       <TextInput
         style={styles.input}
-        placeholder={
-          status === "found" ? "e.g. Unknown or Friendly Cat" : "e.g. Max"
-        }
+        placeholder={status === "found" ? "e.g. Unknown" : "e.g. Max"}
         placeholderTextColor="#aaa"
         value={petName}
         onChangeText={setPetName}
@@ -223,7 +246,7 @@ export default function ReportScreen() {
       <Text style={styles.label}>Species *</Text>
       <TextInput
         style={styles.input}
-        placeholder="e.g. Dog, Cat, Bird"
+        placeholder="e.g. Dog, Cat"
         placeholderTextColor="#aaa"
         value={species}
         onChangeText={setSpecies}
@@ -232,7 +255,7 @@ export default function ReportScreen() {
       <Text style={styles.label}>Breed (Optional)</Text>
       <TextInput
         style={styles.input}
-        placeholder="e.g. German Shepherd, Persian"
+        placeholder="e.g. Persian"
         placeholderTextColor="#aaa"
         value={breed}
         onChangeText={setBreed}
@@ -241,7 +264,7 @@ export default function ReportScreen() {
       <Text style={styles.label}>Last Seen Location *</Text>
       <TextInput
         style={styles.input}
-        placeholder="e.g. Near Central Park, Maple Ave"
+        placeholder="e.g. Dehiwala, Colombo"
         placeholderTextColor="#aaa"
         value={lastSeenLocation}
         onChangeText={setLastSeenLocation}
@@ -250,7 +273,7 @@ export default function ReportScreen() {
       <Text style={styles.label}>Distinctive Description *</Text>
       <TextInput
         style={[styles.input, styles.textArea]}
-        placeholder="Describe collar color, distinct markings, behavior..."
+        placeholder="Describe details..."
         placeholderTextColor="#aaa"
         multiline
         numberOfLines={4}
@@ -258,13 +281,70 @@ export default function ReportScreen() {
         onChangeText={setDescription}
       />
 
+      {/* --- PHONE NUMBERS DYNAMIC FIELD --- */}
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.label}>Phone Numbers * (At least one)</Text>
+        <TouchableOpacity onPress={handleAddPhone}>
+          <Text style={styles.addButtonText}>+ Add Phone</Text>
+        </TouchableOpacity>
+      </View>
+      {phoneNumbers.map((phone, index) => (
+        <View key={`phone-${index}`} style={styles.dynamicRow}>
+          <TextInput
+            style={[styles.input, { flex: 1, marginBottom: 0 }]}
+            placeholder="e.g. 0771234567"
+            placeholderTextColor="#aaa"
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={(text) => handlePhoneChange(text, index)}
+          />
+          {phoneNumbers.length > 1 && (
+            <TouchableOpacity
+              style={styles.removeButton}
+              onPress={() => handleRemovePhone(index)}
+            >
+              <Text style={styles.removeButtonText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ))}
+
+      {/* --- EMAILS DYNAMIC FIELD --- */}
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.label}>Contact Emails (Optional)</Text>
+        <TouchableOpacity onPress={handleAddEmail}>
+          <Text style={styles.addButtonText}>+ Add Email</Text>
+        </TouchableOpacity>
+      </View>
+      {emails.map((emailItem, index) => (
+        <View key={`email-${index}`} style={styles.dynamicRow}>
+          <TextInput
+            style={[styles.input, { flex: 1, marginBottom: 0 }]}
+            placeholder="e.g. contact@domain.com"
+            placeholderTextColor="#aaa"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={emailItem}
+            onChangeText={(text) => handleEmailChange(text, index)}
+          />
+          {emails.length > 1 && (
+            <TouchableOpacity
+              style={styles.removeButton}
+              onPress={() => handleRemoveEmail(index)}
+            >
+              <Text style={styles.removeButtonText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ))}
+
       <Text style={styles.label}>Pet Photo</Text>
       <View style={styles.photoActionRow}>
         <TouchableOpacity style={styles.mediaButton} onPress={pickImage}>
-          <Text style={styles.mediaButtonText}>Choose from Gallery</Text>
+          <Text style={styles.mediaButtonText}>Gallery</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
-          <Text style={styles.mediaButtonText}>Open Camera</Text>
+          <Text style={styles.mediaButtonText}>Camera</Text>
         </TouchableOpacity>
       </View>
 
@@ -296,25 +376,16 @@ export default function ReportScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
-  contentContainer: {
-    padding: 20,
-  },
+  container: { flex: 1, backgroundColor: "#121212" },
+  contentContainer: { padding: 20, paddingBottom: 60 },
   label: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 6,
     marginTop: 12,
   },
-  statusToggleRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 12,
-  },
+  statusToggleRow: { flexDirection: "row", gap: 12, marginBottom: 12 },
   toggleButton: {
     flex: 1,
     backgroundColor: "#1e1e1e",
@@ -324,19 +395,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  activeLostButton: {
-    backgroundColor: "#d93838",
-    borderColor: "#ff4a4a",
-  },
-  activeFoundButton: {
-    backgroundColor: "#2e7d32",
-    borderColor: "#4caf50",
-  },
-  toggleButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
+  activeLostButton: { backgroundColor: "#d93838", borderColor: "#ff4a4a" },
+  activeFoundButton: { backgroundColor: "#2e7d32", borderColor: "#4caf50" },
+  toggleButtonText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
   input: {
     backgroundColor: "#1e1e1e",
     color: "#fff",
@@ -347,15 +408,30 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 15,
   },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  photoActionRow: {
+  textArea: { height: 90, textAlignVertical: "top" },
+  sectionHeaderRow: {
     flexDirection: "row",
-    gap: 12,
-    marginBottom: 12,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 4,
   },
+  addButtonText: { color: "#8A2BE2", fontWeight: "bold", fontSize: 14 },
+  dynamicRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  removeButton: {
+    backgroundColor: "#2a2a2a",
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#444",
+  },
+  removeButtonText: { color: "#ff4a4a", fontWeight: "bold" },
+  photoActionRow: { flexDirection: "row", gap: 12, marginBottom: 12 },
   mediaButton: {
     flex: 1,
     backgroundColor: "#1e1e1e",
@@ -365,42 +441,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-  mediaButtonText: {
-    color: "#aaa",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  previewContainer: {
-    alignItems: "center",
-    marginTop: 10,
-    position: "relative",
-  },
+  mediaButtonText: { color: "#aaa", fontSize: 13, fontWeight: "600" },
+  previewContainer: { alignItems: "center", marginTop: 10 },
   imagePreview: {
     width: "100%",
-    height: 200,
+    height: 180,
     borderRadius: 8,
     backgroundColor: "#1e1e1e",
   },
-  removeImageBadge: {
-    marginTop: 8,
-    padding: 6,
-  },
-  removeImageText: {
-    color: "#ff4a4a",
-    fontSize: 13,
-    fontWeight: "500",
-  },
+  removeImageBadge: { marginTop: 8, padding: 6 },
+  removeImageText: { color: "#ff4a4a", fontSize: 13, fontWeight: "500" },
   submitButton: {
     backgroundColor: "#8A2BE2",
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 24,
-    marginBottom: 40,
   },
-  submitButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  submitButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });

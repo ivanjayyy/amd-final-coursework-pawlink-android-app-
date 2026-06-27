@@ -64,10 +64,10 @@ export default function ProfileScreen() {
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"], // <-- Updated here
       allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.6,
+      aspect: [4, 3],
+      quality: 0.8,
     });
 
     if (!result.canceled) {

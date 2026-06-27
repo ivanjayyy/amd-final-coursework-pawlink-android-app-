@@ -1,8 +1,11 @@
 // app/_layout.tsx
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useContext, useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, LogBox, View } from "react-native";
 import { AuthContext, AuthProvider } from "../context/AuthContext";
+
+// Ignore the specific Firebase BloomFilter warning spam
+LogBox.ignoreLogs(["@firebase/firestore: Firestore", "BloomFilter error"]);
 
 function RootLayoutNav() {
   const { user, loading } = useContext(AuthContext);

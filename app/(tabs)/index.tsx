@@ -1,16 +1,16 @@
 // app/(tabs)/index.tsx
-import { signOut } from "firebase/auth";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
 } from "react-native";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { signOut } from "firebase/auth";
 import { auth, db } from "../../config/firebase";
 
 interface PetReport {
@@ -21,7 +21,10 @@ interface PetReport {
   breed: string;
   lastSeenLocation: string;
   description: string;
-  imageUrl?: string; // <-- Added to capture the ImgBB cloud image URL
+  imageUrl?: string;
+  phoneNumbers?: string[]; // <-- Added fields
+  contactEmails?: string[]; // <-- Added fields
+  reward?: string; // <-- Added field
   createdAt: string;
   userEmail: string;
 }
@@ -34,7 +37,7 @@ export default function FeedScreen() {
     const reportsRef = collection(db, "pet_reports");
     const q = query(reportsRef, orderBy("createdAt", "desc"));
 
-    const unsubscribe = onSnapshot(
+    return onSnapshot(
       q,
       (snapshot) => {
         const fetchedReports: PetReport[] = [];
@@ -45,24 +48,17 @@ export default function FeedScreen() {
         setLoading(false);
       },
       (error) => {
-        console.error("Error reading live feed: ", error);
+        console.error(error);
         setLoading(false);
       },
     );
-
-    return unsubscribe;
   }, []);
-
-  const handleSignOut = () => {
-    signOut(auth);
-  };
 
   const renderReportCard = ({ item }: { item: PetReport }) => {
     const isLost = item.status === "lost";
 
     return (
       <View style={styles.card}>
-        {/* Render Card Image Banner if it exists */}
         {item.imageUrl && (
           <Image
             source={{ uri: item.imageUrl }}
@@ -84,23 +80,44 @@ export default function FeedScreen() {
             </View>
           </View>
 
+          {/* Reward Alert Banner */}
+          {isLost && item.reward ? (
+            <View style={styles.rewardBanner}>
+              <Text style={styles.rewardText}>🎁 Reward: {item.reward}</Text>
+            </View>
+          ) : null}
+
           <Text style={styles.detailsText}>
             <Text style={styles.boldText}>Species: </Text>
             {item.species} • <Text style={styles.boldText}>Breed: </Text>
             {item.breed}
           </Text>
-
           <Text style={styles.detailsText}>
             <Text style={styles.boldText}>Last Seen: </Text>
             {item.lastSeenLocation}
           </Text>
-
           <Text style={styles.descriptionText}>{item.description}</Text>
+
+          {/* Contact Details Grid */}
+          <View style={styles.contactContainer}>
+            <Text style={styles.contactTitle}>Contact Information:</Text>
+            {item.phoneNumbers &&
+              item.phoneNumbers.map((phone, i) => (
+                <Text key={`p-${i}`} style={styles.contactItem}>
+                  📞 {phone}
+                </Text>
+              ))}
+            {item.contactEmails &&
+              item.contactEmails.map((email, i) => (
+                <Text key={`e-${i}`} style={styles.contactItem}>
+                  ✉️ {email}
+                </Text>
+              ))}
+          </View>
 
           <View style={styles.cardFooter}>
             <Text style={styles.footerText}>
-              Posted by:{" "}
-              {item.userEmail ? item.userEmail.split("@")[0] : "Anonymous"}
+              By: {item.userEmail ? item.userEmail.split("@")[0] : "User"}
             </Text>
             <Text style={styles.footerText}>
               {item.createdAt
@@ -117,20 +134,18 @@ export default function FeedScreen() {
     <View style={styles.container}>
       <View style={styles.headerBar}>
         <Text style={styles.headerTitle}>Community Alerts</Text>
-        <TouchableOpacity style={styles.signOutLink} onPress={handleSignOut}>
-          <Text style={styles.signOutLinkText}>Sign Out</Text>
+        <TouchableOpacity onPress={() => signOut(auth)}>
+          <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
 
       {loading ? (
-        <View style={styles.centerLayout}>
+        <View style={styles.centered}>
           <ActivityIndicator size="large" color="#8A2BE2" />
         </View>
       ) : reports.length === 0 ? (
-        <View style={styles.centerLayout}>
-          <Text style={styles.emptyText}>
-            No pet reports found. The neighborhood is currently safe!
-          </Text>
+        <View style={styles.centered}>
+          <Text style={styles.emptyText}>No pet alerts reported yet.</Text>
         </View>
       ) : (
         <FlatList
@@ -138,7 +153,6 @@ export default function FeedScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderReportCard}
           contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
@@ -146,10 +160,7 @@ export default function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
+  container: { flex: 1, backgroundColor: "#121212" },
   headerBar: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -159,105 +170,76 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#222",
   },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  signOutLink: {
-    padding: 6,
-  },
-  signOutLinkText: {
-    color: "#ff4a4a",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  centerLayout: {
+  headerTitle: { fontSize: 22, fontWeight: "bold", color: "#fff" },
+  signOutText: { color: "#ff4a4a", fontSize: 14, fontWeight: "600" },
+  centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 40,
   },
-  emptyText: {
-    color: "#aaa",
-    textAlign: "center",
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  listContainer: {
-    padding: 16,
-    paddingBottom: 40,
-  },
+  emptyText: { color: "#aaa", fontSize: 16 },
+  listContainer: { padding: 16 },
   card: {
     backgroundColor: "#1e1e1e",
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: "#333",
-    overflow: "hidden", // Ensures image corners conform to the card boundary radius
+    overflow: "hidden",
   },
-  cardImage: {
-    width: "100%",
-    height: 180,
-    backgroundColor: "#252525",
-  },
-  cardContent: {
-    padding: 16,
-  },
+  cardImage: { width: "100%", height: 180, backgroundColor: "#252525" },
+  cardContent: { padding: 16 },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
   },
-  petName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  statusBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+  petName: { fontSize: 20, fontWeight: "bold", color: "#fff" },
+  statusBadge: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6 },
+  lostBadge: { backgroundColor: "#d93838" },
+  foundBadge: { backgroundColor: "#2e7d32" },
+  statusText: { color: "#fff", fontWeight: "bold", fontSize: 11 },
+  rewardBanner: {
+    backgroundColor: "rgba(138, 43, 226, 0.15)",
+    padding: 10,
     borderRadius: 6,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#8A2BE2",
   },
-  lostBadge: {
-    backgroundColor: "#d93838",
-  },
-  foundBadge: {
-    backgroundColor: "#2e7d32",
-  },
-  statusText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-  detailsText: {
-    color: "#ccc",
-    fontSize: 14,
-    marginBottom: 6,
-  },
-  boldText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
+  rewardText: { color: "#b172ff", fontWeight: "bold", fontSize: 14 },
+  detailsText: { color: "#ccc", fontSize: 14, marginBottom: 4 },
+  boldText: { color: "#fff", fontWeight: "600" },
   descriptionText: {
     color: "#aaa",
     fontSize: 14,
-    lineHeight: 20,
-    marginTop: 6,
+    marginTop: 4,
     marginBottom: 12,
   },
+  contactContainer: {
+    backgroundColor: "#151515",
+    padding: 10,
+    borderRadius: 6,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: "#252525",
+  },
+  contactTitle: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  contactItem: { color: "#bbb", fontSize: 13, marginBottom: 2 },
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     borderTopWidth: 1,
     borderTopColor: "#2a2a2a",
     paddingTop: 10,
-    marginTop: 4,
+    marginTop: 12,
   },
-  footerText: {
-    color: "#777",
-    fontSize: 12,
-  },
+  footerText: { color: "#666", fontSize: 12 },
 });
