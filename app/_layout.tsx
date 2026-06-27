@@ -12,15 +12,16 @@ function RootLayoutNav() {
   useEffect(() => {
     if (loading) return;
 
-    // Check if the user is currently inside the (auth) directory
-    const inAuthGroup = segments[0] === "(auth)";
+    // Cast segments as any so TypeScript doesn't check literal folder names yet
+    const currentSegments = segments as any;
+    const inAuthGroup = currentSegments[0] === "(auth)";
 
     if (!user && !inAuthGroup) {
-      // Redirect to login if not authenticated
-      router.replace("/(auth)/login");
+      // Cast the route path as any to bypass strict route checking
+      router.replace("/(auth)/login" as any);
     } else if (user && inAuthGroup) {
-      // Redirect to main tabs if already logged in
-      router.replace("/(tabs)");
+      // Cast the route path as any to bypass strict route checking
+      router.replace("/(tabs)" as any);
     }
   }, [user, loading, segments]);
 
