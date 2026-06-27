@@ -116,7 +116,6 @@ export default function ReportScreen() {
   };
 
   const handleSubmit = async () => {
-    // Filter out blank inputs from our dynamic lists
     const cleanPhones = phoneNumbers
       .map((p) => p.trim())
       .filter((p) => p !== "");
@@ -197,7 +196,7 @@ export default function ReportScreen() {
       contentContainerStyle={styles.contentContainer}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.label}>Report Status</Text>
+      <Text style={styles.label}>REPORT STATUS</Text>
       <View style={styles.statusToggleRow}>
         <TouchableOpacity
           style={[
@@ -206,7 +205,7 @@ export default function ReportScreen() {
           ]}
           onPress={() => setStatus("lost")}
         >
-          <Text style={styles.toggleButtonText}>Lost</Text>
+          <Text style={styles.toggleButtonText}>LOST</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[
@@ -215,17 +214,22 @@ export default function ReportScreen() {
           ]}
           onPress={() => setStatus("found")}
         >
-          <Text style={styles.toggleButtonText}>Found</Text>
+          <Text style={styles.toggleButtonText}>FOUND</Text>
         </TouchableOpacity>
       </View>
 
       {status === "lost" && (
-        <View>
-          <Text style={styles.label}>Reward Offered (Optional)</Text>
+        <View style={styles.comicPanel}>
+          <Text style={[styles.label, { color: "#FF4A4A" }]}>
+            REWARD OFFERED (OPTIONAL)
+          </Text>
           <TextInput
-            style={[styles.input, { borderColor: "#8A2BE2" }]}
+            style={[
+              styles.input,
+              { borderColor: "#FFD700", backgroundColor: "#FFFDE6" },
+            ]}
             placeholder="e.g. Rs. 5,000 or Cash Reward"
-            placeholderTextColor="#aaa"
+            placeholderTextColor="#777"
             value={reward}
             onChangeText={setReward}
           />
@@ -233,48 +237,48 @@ export default function ReportScreen() {
       )}
 
       <Text style={styles.label}>
-        Pet Name {status === "found" && "(Optional)"}
+        PET NAME {status === "found" && "(OPTIONAL)"}
       </Text>
       <TextInput
         style={styles.input}
         placeholder={status === "found" ? "e.g. Unknown" : "e.g. Max"}
-        placeholderTextColor="#aaa"
+        placeholderTextColor="#777"
         value={petName}
         onChangeText={setPetName}
       />
 
-      <Text style={styles.label}>Species *</Text>
+      <Text style={styles.label}>SPECIES *</Text>
       <TextInput
         style={styles.input}
         placeholder="e.g. Dog, Cat"
-        placeholderTextColor="#aaa"
+        placeholderTextColor="#777"
         value={species}
         onChangeText={setSpecies}
       />
 
-      <Text style={styles.label}>Breed (Optional)</Text>
+      <Text style={styles.label}>BREED (OPTIONAL)</Text>
       <TextInput
         style={styles.input}
         placeholder="e.g. Persian"
-        placeholderTextColor="#aaa"
+        placeholderTextColor="#777"
         value={breed}
         onChangeText={setBreed}
       />
 
-      <Text style={styles.label}>Last Seen Location *</Text>
+      <Text style={styles.label}>LAST SEEN LOCATION *</Text>
       <TextInput
         style={styles.input}
         placeholder="e.g. Dehiwala, Colombo"
-        placeholderTextColor="#aaa"
+        placeholderTextColor="#777"
         value={lastSeenLocation}
         onChangeText={setLastSeenLocation}
       />
 
-      <Text style={styles.label}>Distinctive Description *</Text>
+      <Text style={styles.label}>DISTINCTIVE DESCRIPTION *</Text>
       <TextInput
         style={[styles.input, styles.textArea]}
         placeholder="Describe details..."
-        placeholderTextColor="#aaa"
+        placeholderTextColor="#777"
         multiline
         numberOfLines={4}
         value={description}
@@ -283,9 +287,9 @@ export default function ReportScreen() {
 
       {/* --- PHONE NUMBERS DYNAMIC FIELD --- */}
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.label}>Phone Numbers * (At least one)</Text>
-        <TouchableOpacity onPress={handleAddPhone}>
-          <Text style={styles.addButtonText}>+ Add Phone</Text>
+        <Text style={styles.label}>PHONE NUMBERS *</Text>
+        <TouchableOpacity style={styles.comicTextBtn} onPress={handleAddPhone}>
+          <Text style={styles.addButtonText}>+ ADD PHONE</Text>
         </TouchableOpacity>
       </View>
       {phoneNumbers.map((phone, index) => (
@@ -293,7 +297,7 @@ export default function ReportScreen() {
           <TextInput
             style={[styles.input, { flex: 1, marginBottom: 0 }]}
             placeholder="e.g. 0771234567"
-            placeholderTextColor="#aaa"
+            placeholderTextColor="#777"
             keyboardType="phone-pad"
             value={phone}
             onChangeText={(text) => handlePhoneChange(text, index)}
@@ -311,9 +315,9 @@ export default function ReportScreen() {
 
       {/* --- EMAILS DYNAMIC FIELD --- */}
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.label}>Contact Emails (Optional)</Text>
-        <TouchableOpacity onPress={handleAddEmail}>
-          <Text style={styles.addButtonText}>+ Add Email</Text>
+        <Text style={styles.label}>CONTACT EMAILS (OPTIONAL)</Text>
+        <TouchableOpacity style={styles.comicTextBtn} onPress={handleAddEmail}>
+          <Text style={styles.addButtonText}>+ ADD EMAIL</Text>
         </TouchableOpacity>
       </View>
       {emails.map((emailItem, index) => (
@@ -321,7 +325,7 @@ export default function ReportScreen() {
           <TextInput
             style={[styles.input, { flex: 1, marginBottom: 0 }]}
             placeholder="e.g. contact@domain.com"
-            placeholderTextColor="#aaa"
+            placeholderTextColor="#777"
             keyboardType="email-address"
             autoCapitalize="none"
             value={emailItem}
@@ -338,13 +342,13 @@ export default function ReportScreen() {
         </View>
       ))}
 
-      <Text style={styles.label}>Pet Photo</Text>
+      <Text style={styles.label}>PET PHOTO</Text>
       <View style={styles.photoActionRow}>
         <TouchableOpacity style={styles.mediaButton} onPress={pickImage}>
-          <Text style={styles.mediaButtonText}>Gallery</Text>
+          <Text style={styles.mediaButtonText}>GALLERY</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
-          <Text style={styles.mediaButtonText}>Camera</Text>
+          <Text style={styles.mediaButtonText}>CAMERA</Text>
         </TouchableOpacity>
       </View>
 
@@ -355,20 +359,20 @@ export default function ReportScreen() {
             style={styles.removeImageBadge}
             onPress={() => setImageUri(null)}
           >
-            <Text style={styles.removeImageText}>✕ Remove Photo</Text>
+            <Text style={styles.removeImageText}>✕ REMOVE PHOTO</Text>
           </TouchableOpacity>
         </View>
       )}
 
       <TouchableOpacity
-        style={styles.submitButton}
+        style={[styles.submitButton, submitting && styles.disabledButton]}
         onPress={handleSubmit}
         disabled={submitting}
       >
         {submitting ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#000" />
         ) : (
-          <Text style={styles.submitButtonText}>Submit Report</Text>
+          <Text style={styles.submitButtonText}>SUBMIT REPORT</Text>
         )}
       </TouchableOpacity>
     </ScrollView>
@@ -379,84 +383,150 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#121212" },
   contentContainer: { padding: 20, paddingBottom: 60 },
   label: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
+    color: "#FFD700", // Pop comic yellow
+    fontSize: 14,
+    fontWeight: "900",
+    letterSpacing: 1.5,
     marginBottom: 6,
-    marginTop: 12,
+    marginTop: 16,
   },
   statusToggleRow: { flexDirection: "row", gap: 12, marginBottom: 12 },
   toggleButton: {
     flex: 1,
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#1E1E1E",
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#333",
+    borderWidth: 3,
+    borderColor: "#000",
+    // Comic cell shadow block
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 4, height: 4 },
   },
-  activeLostButton: { backgroundColor: "#d93838", borderColor: "#ff4a4a" },
-  activeFoundButton: { backgroundColor: "#2e7d32", borderColor: "#4caf50" },
-  toggleButtonText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
-  input: {
-    backgroundColor: "#1e1e1e",
+  activeLostButton: { backgroundColor: "#FF4A4A" },
+  activeFoundButton: { backgroundColor: "#2E7D32" },
+  toggleButtonText: {
     color: "#fff",
+    fontWeight: "900",
+    fontSize: 16,
+    letterSpacing: 1,
+  },
+  input: {
+    backgroundColor: "#FFFFFF",
+    color: "#000000",
     padding: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#333",
+    borderRadius: 4,
+    borderWidth: 3,
+    borderColor: "#000000",
     marginBottom: 8,
     fontSize: 15,
+    fontWeight: "700",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 3, height: 3 },
   },
   textArea: { height: 90, textAlignVertical: "top" },
+  comicPanel: {
+    marginBottom: 4,
+  },
   sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 14,
     marginBottom: 4,
   },
-  addButtonText: { color: "#8A2BE2", fontWeight: "bold", fontSize: 14 },
+  comicTextBtn: {
+    backgroundColor: "#8A2BE2",
+    borderWidth: 2,
+    borderColor: "#000",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+  },
+  addButtonText: { color: "#FFF", fontWeight: "900", fontSize: 11 },
   dynamicRow: {
     flexDirection: "row",
     gap: 10,
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   removeButton: {
-    backgroundColor: "#2a2a2a",
+    backgroundColor: "#FF4A4A",
     padding: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#444",
+    borderRadius: 4,
+    borderWidth: 3,
+    borderColor: "#000",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 2, height: 2 },
   },
-  removeButtonText: { color: "#ff4a4a", fontWeight: "bold" },
+  removeButtonText: { color: "#000", fontWeight: "900" },
   photoActionRow: { flexDirection: "row", gap: 12, marginBottom: 12 },
   mediaButton: {
     flex: 1,
-    backgroundColor: "#1e1e1e",
-    borderWidth: 1,
-    borderColor: "#444",
+    backgroundColor: "#333",
+    borderWidth: 3,
+    borderColor: "#000",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 3, height: 3 },
   },
-  mediaButtonText: { color: "#aaa", fontSize: 13, fontWeight: "600" },
-  previewContainer: { alignItems: "center", marginTop: 10 },
+  mediaButtonText: {
+    color: "#FFF",
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  previewContainer: {
+    alignItems: "center",
+    marginTop: 10,
+    borderWidth: 3,
+    borderColor: "#000",
+    borderRadius: 4,
+    backgroundColor: "#000",
+    overflow: "hidden",
+  },
   imagePreview: {
     width: "100%",
     height: 180,
-    borderRadius: 8,
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#1E1E1E",
   },
-  removeImageBadge: { marginTop: 8, padding: 6 },
-  removeImageText: { color: "#ff4a4a", fontSize: 13, fontWeight: "500" },
+  removeImageBadge: {
+    width: "100%",
+    backgroundColor: "#FF4A4A",
+    padding: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#000",
+  },
+  removeImageText: { color: "#000", fontSize: 13, fontWeight: "900" },
   submitButton: {
-    backgroundColor: "#8A2BE2",
+    backgroundColor: "#8A2BE2", // Classic punchy purple panel
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: "center",
     marginTop: 24,
+    borderWidth: 3,
+    borderColor: "#000",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 5, height: 5 },
   },
-  submitButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  disabledButton: { backgroundColor: "#555" },
+  submitButtonText: {
+    color: "#FFF",
+    fontWeight: "900",
+    fontSize: 18,
+    letterSpacing: 2,
+  },
 });
