@@ -1,6 +1,11 @@
 // app/(tabs)/profile.tsx
 import * as ImagePicker from "expo-image-picker";
-import { deleteUser } from "firebase/auth";
+import {
+  deleteUser,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  verifyBeforeUpdateEmail,
+} from "firebase/auth";
 import { deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import {
@@ -40,7 +45,7 @@ export default function ProfileScreen() {
       if (userDoc.exists()) {
         const data = userDoc.data();
         setUsername(data.username || "");
-        setEmail(data.email || "");
+        setEmail(auth.currentUser?.email || data.email || "");
         setProfilePic(
           data.profilePicture ||
             "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
@@ -57,16 +62,16 @@ export default function ProfileScreen() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
-        "Permission Required",
-        "We need access to change your avatar image.",
+        "PERMISSION REQUIRED",
+        "We need camera roll access to change your avatar panel.",
       );
       return;
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"], // <-- Updated here
+      mediaTypes: ["images"],
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [1, 1],
       quality: 0.8,
     });
 
@@ -100,35 +105,103 @@ export default function ProfileScreen() {
           profilePicture: uploadedUrl,
         });
         setProfilePic(uploadedUrl);
-        Alert.alert("Success", "Profile image modified successfully!");
+        Alert.alert("SUCCESS", "Profile canvas artwork modified cleanly!");
       }
     } catch (err) {
       Alert.alert(
-        "Upload Error",
-        "Could not save your image to the host server.",
+        "UPLOAD ERROR",
+        "Could not save your frame to the cloud sector.",
       );
     } finally {
       setUpdating(false);
     }
   };
 
+  const promptReauthentication = (): Promise<string> => {
+    return new Promise((resolve) => {
+      Alert.prompt(
+        "SECURITY CHECK",
+        "Please re-enter your secret password to verify this profile modification:",
+        [
+          { text: "CANCEL", style: "cancel", onPress: () => resolve("") },
+          // Add ': string | undefined' type annotation right here 👇
+          {
+            text: "CONFIRM",
+            onPress: (password: string | undefined) => resolve(password || ""),
+          },
+        ],
+        "secure-text",
+      );
+    });
+  };
+
   const handleUpdateDetails = async () => {
     if (!username.trim()) {
-      Alert.alert("Validation Error", "Username field cannot be left blank.");
+      Alert.alert(
+        "VALIDATION ERROR",
+        "The Identity Code name can't be left blank.",
+      );
+      return;
+    }
+    if (!email.trim()) {
+      Alert.alert(
+        "VALIDATION ERROR",
+        "The Comms link channel email can't be empty.",
+      );
       return;
     }
 
     setUpdating(true);
     try {
+      const currentUser = auth.currentUser;
+
+      // 1. Process secure email change if it is different
+      if (
+        currentUser &&
+        email.trim().toLowerCase() !== currentUser.email?.toLowerCase()
+      ) {
+        const password = await promptReauthentication();
+        if (!password) {
+          setUpdating(false);
+          return;
+        }
+
+        // Re-authenticate user session context
+        const credential = EmailAuthProvider.credential(
+          currentUser.email!,
+          password,
+        );
+        await reauthenticateWithCredential(currentUser, credential);
+
+        // Initiate secure email transfer routine
+        await verifyBeforeUpdateEmail(currentUser, email.trim().toLowerCase());
+        Alert.alert(
+          "VERIFICATION SENT",
+          "A security check link has been deployed to your new email address. Your record updates completely once confirmed.",
+        );
+      }
+
+      // 2. Sync regular metadata parameters to firestore database
       await updateDoc(doc(db, "users", user!.uid), {
         username: username.trim(),
+        email: email.trim().toLowerCase(),
       });
-      Alert.alert("Success", "Profile metadata synchronized cleanly!");
+
+      Alert.alert("SUCCESS", "Hero file metadata synchronized flawlessly!");
     } catch (err: any) {
-      Alert.alert(
-        "Update Failed",
-        err.message || "Failed to edit user values.",
-      );
+      if (err.code === "auth/email-already-in-use") {
+        Alert.alert(
+          "TRANSMISSION FAIL",
+          "This email frequency is already claimed by another agent.",
+        );
+      } else if (err.code === "auth/wrong-password") {
+        Alert.alert("ACCESS DENIED", "Incorrect passcode validation sequence.");
+      } else {
+        Alert.alert(
+          "UPDATE FAILED",
+          err.message || "Failed to alter data layers.",
+        );
+      }
     } finally {
       setUpdating(false);
     }
@@ -136,12 +209,12 @@ export default function ProfileScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      "Delete Account",
-      "Are you absolutely sure you want to completely remove your profile data? This process is permanent and cannot be undone.",
+      "ACCOUNT SELF-DESTRUCT",
+      "Are you entirely certain you want to purge your data file from our system grid? This wipe is total and irreversible.",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "CANCEL", style: "cancel" },
         {
-          text: "Delete Permanently",
+          text: "PERMANENT WIPEOUT",
           style: "destructive",
           onPress: executeAccountDeletion,
         },
@@ -154,21 +227,20 @@ export default function ProfileScreen() {
     try {
       const currentUser = auth.currentUser;
       if (currentUser) {
-        // 1. Clear out Firestore reference configuration data
         await deleteDoc(doc(db, "users", currentUser.uid));
-        // 2. Kill the primary session within Auth DB maps
         await deleteUser(currentUser);
-        // Note: AuthContext handles system state reset automatically via session observation hooks
       }
     } catch (err: any) {
-      // Security Check: Firebase requires users to have authenticated recently to execute deletions
       if (err.code === "auth/requires-recent-login") {
         Alert.alert(
-          "Re-authentication Required",
-          "For security reasons, please sign out, log back in, and immediately re-attempt account deletion.",
+          "RE-AUTHENTICATION REQUIRED",
+          "For severe safety tasks, please log out, cycle back into the system, and trigger this purge command instantly.",
         );
       } else {
-        Alert.alert("Deletion Error", err.message || "Something went wrong.");
+        Alert.alert(
+          "DELETION FAILURE",
+          err.message || "An unexpected error blocked the wipe.",
+        );
       }
     } finally {
       setUpdating(false);
@@ -178,7 +250,7 @@ export default function ProfileScreen() {
   if (fetching) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#8A2BE2" />
+        <ActivityIndicator size="large" color="#FFD700" />
       </View>
     );
   }
@@ -187,24 +259,43 @@ export default function ProfileScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
+      keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.avatarSection}>
-        <TouchableOpacity onPress={changeProfilePicture} disabled={updating}>
-          <Image source={{ uri: profilePic }} style={styles.largeAvatar} />
-          <View style={styles.editBadge}>
-            <Text style={styles.editBadgeText}>Edit</Text>
-          </View>
-        </TouchableOpacity>
-        <Text style={styles.userEmailText}>{email}</Text>
+      <View style={styles.headerBar}>
+        <Text style={styles.headerTitle}>AGENT PROFILE FILE</Text>
       </View>
 
-      <Text style={styles.sectionLabel}>Display Username</Text>
+      <View style={styles.avatarSection}>
+        <TouchableOpacity
+          style={styles.avatarFrame}
+          onPress={changeProfilePicture}
+          disabled={updating}
+        >
+          <Image source={{ uri: profilePic }} style={styles.largeAvatar} />
+          <View style={styles.editBadge}>
+            <Text style={styles.editBadgeText}>ALTER</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.sectionLabel}>IDENTITY CALLSIGN</Text>
       <TextInput
         style={styles.input}
         value={username}
         onChangeText={setUsername}
-        placeholder="Username"
-        placeholderTextColor="#aaa"
+        placeholder="ENTER HERO ALIAS..."
+        placeholderTextColor="#888"
+      />
+
+      <Text style={styles.sectionLabel}>COMMS ROUTING EMAIL</Text>
+      <TextInput
+        style={styles.input}
+        value={email}
+        onChangeText={setEmail}
+        placeholder="ENTER NEW FREQUENCY..."
+        placeholderTextColor="#888"
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
 
       <TouchableOpacity
@@ -213,20 +304,20 @@ export default function ProfileScreen() {
         disabled={updating}
       >
         {updating ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#000" />
         ) : (
-          <Text style={styles.saveButtonText}>Save Details</Text>
+          <Text style={styles.saveButtonText}>SAVE CHANGELOG</Text>
         )}
       </TouchableOpacity>
 
-      <View style={styles.divider} />
+      <View style={styles.thickDivider} />
 
       <TouchableOpacity
         style={styles.deleteButton}
         onPress={handleDeleteAccount}
         disabled={updating}
       >
-        <Text style={styles.deleteButtonText}>Delete PawLink Account</Text>
+        <Text style={styles.deleteButtonText}>WIPE CLIENT ACCOUNT</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -238,7 +329,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#121212",
   },
   contentContainer: {
-    padding: 24,
+    padding: 16,
+    paddingBottom: 40,
+  },
+  headerBar: {
+    backgroundColor: "#1A1A1A",
+    borderWidth: 3,
+    borderColor: "#000000",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    marginBottom: 24,
+    transform: [{ rotate: "0.5deg" }],
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#FFD700",
+    letterSpacing: 2,
+    textAlign: "center",
   },
   centered: {
     flex: 1,
@@ -248,81 +357,101 @@ const styles = StyleSheet.create({
   },
   avatarSection: {
     alignItems: "center",
-    marginVertical: 20,
+    marginBottom: 24,
+  },
+  avatarFrame: {
+    borderWidth: 4,
+    borderColor: "#000000",
+    borderRadius: 4, // Sharp comic cell look
+    backgroundColor: "#FFFFFF",
+    padding: 4,
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 5, height: 5 },
     position: "relative",
   },
   largeAvatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: "#8A2BE2",
-    backgroundColor: "#1e1e1e",
+    width: 130,
+    height: 130,
+    backgroundColor: "#EAEAEA",
   },
   editBadge: {
     position: "absolute",
-    bottom: 0,
-    right: 4,
-    backgroundColor: "#8A2BE2",
+    bottom: -6,
+    right: -6,
+    backgroundColor: "#FFD700",
     paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    borderWidth: 2,
+    borderColor: "#000000",
+    borderRadius: 2,
   },
   editBadgeText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-  userEmailText: {
-    color: "#aaa",
-    fontSize: 14,
-    marginTop: 12,
+    color: "#000000",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1,
   },
   sectionLabel: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-    marginTop: 16,
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 1.5,
+    marginBottom: 6,
+    marginTop: 12,
   },
   input: {
-    backgroundColor: "#1e1e1e",
-    color: "#fff",
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#333",
+    backgroundColor: "#FFFFFF",
+    color: "#000000",
+    padding: 14,
+    borderRadius: 4,
+    borderWidth: 3,
+    borderColor: "#000000",
     fontSize: 15,
+    fontWeight: "700",
     marginBottom: 16,
   },
   saveButton: {
-    backgroundColor: "#8A2BE2",
+    backgroundColor: "#8A2BE2", // Classic punchy pop violet
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 12,
+    borderWidth: 3,
+    borderColor: "#000000",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 4, height: 4 },
   },
   saveButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 15,
+    letterSpacing: 1.5,
   },
-  divider: {
-    height: 1,
-    backgroundColor: "#2a2a2a",
+  thickDivider: {
+    height: 4,
+    backgroundColor: "#000000",
     marginVertical: 32,
   },
   deleteButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "#ff4a4a",
+    backgroundColor: "#FF4A4A",
+    borderWidth: 3,
+    borderColor: "#000000",
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 4, height: 4 },
   },
   deleteButtonText: {
-    color: "#ff4a4a",
-    fontWeight: "bold",
-    fontSize: 15,
+    color: "#000000",
+    fontWeight: "900",
+    fontSize: 14,
+    letterSpacing: 1,
   },
 });
