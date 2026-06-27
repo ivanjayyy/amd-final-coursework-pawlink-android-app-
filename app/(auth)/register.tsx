@@ -13,6 +13,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
 import { auth, db } from "../../config/firebase";
 
@@ -58,13 +59,13 @@ export default function RegisterScreen() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
-        "Permission Denied",
-        "We need photo library access to upload a avatar!",
+        "PERMISSION DENIED",
+        "We need photo library access to upload an avatar!",
       );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"], // <-- Updated here
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.6,
@@ -76,11 +77,11 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!username || !email || !password || !confirmPassword) {
-      setError("Please fill in all fields");
+      setError("ALL INTEL FIELDS MUST BE FILLED");
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("PASSCODES DO NOT MATCH");
       return;
     }
 
@@ -89,7 +90,7 @@ export default function RegisterScreen() {
 
     try {
       let profilePicUrl =
-        "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"; // Default placeholder avatar
+        "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
 
       if (imageUri) {
         const cloudUrl = await uploadProfileImage(imageUri);
@@ -112,7 +113,7 @@ export default function RegisterScreen() {
         role: "user",
       });
     } catch (err: any) {
-      setError(err.message || "Failed to create an account");
+      setError(err.message || "FAILED TO CREATE AGENT FILE");
     } finally {
       setLoading(false);
     }
@@ -123,55 +124,75 @@ export default function RegisterScreen() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Create Account</Text>
+      <View style={styles.titleBadge}>
+        <Text style={styles.titleText}>NEW AGENT</Text>
+      </View>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>⚠ {error.toUpperCase()}</Text>
+        </View>
+      ) : null}
 
-      <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
-        <Image
-          source={{
-            uri:
-              imageUri ||
-              "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
-          }}
-          style={styles.avatar}
-        />
-        <Text style={styles.avatarText}>Choose Profile Picture</Text>
+      <TouchableOpacity
+        style={styles.avatarContainer}
+        onPress={pickImage}
+        disabled={loading}
+      >
+        <View style={styles.avatarFrame}>
+          <Image
+            source={{
+              uri:
+                imageUri ||
+                "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+            }}
+            style={styles.avatar}
+          />
+          <View style={styles.editBadge}>
+            <Text style={styles.editBadgeText}>PICK</Text>
+          </View>
+        </View>
+        <Text style={styles.avatarText}>CHOOSE AVATAR ARTWORK</Text>
       </TouchableOpacity>
 
+      <Text style={styles.inputLabel}>IDENTITY CALLSIGN</Text>
       <TextInput
         style={styles.input}
-        placeholder="Username"
-        placeholderTextColor="#aaa"
+        placeholder="ENTER HERO ALIAS..."
+        placeholderTextColor="#888"
         value={username}
         onChangeText={setUsername}
       />
 
+      <Text style={styles.inputLabel}>COMMS ROUTING EMAIL</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#aaa"
+        placeholder="ENTER VALID FREQUENCY..."
+        placeholderTextColor="#888"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
       />
 
+      <Text style={styles.inputLabel}>SECRET ACCESS CODE</Text>
       <TextInput
         style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#aaa"
+        placeholder="CHOOSE PASSWORD..."
+        placeholderTextColor="#888"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
         autoCapitalize="none"
       />
 
+      <Text style={styles.inputLabel}>CONFIRM ACCESS CODE</Text>
       <TextInput
         style={styles.input}
-        placeholder="Confirm Password"
-        placeholderTextColor="#aaa"
+        placeholder="RE-ENTER PASSWORD..."
+        placeholderTextColor="#888"
         secureTextEntry
         value={confirmPassword}
         onChangeText={setConfirmPassword}
@@ -184,14 +205,14 @@ export default function RegisterScreen() {
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#000" />
         ) : (
-          <Text style={styles.buttonText}>Sign Up</Text>
+          <Text style={styles.buttonText}>INITIALIZE SIGN UP</Text>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.linkButton} onPress={() => router.back()}>
-        <Text style={styles.linkText}>Already have an account? Sign In</Text>
+        <Text style={styles.linkText}>ALREADY REGISTERED? SIGN IN</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -203,67 +224,135 @@ const styles = StyleSheet.create({
     backgroundColor: "#121212",
   },
   contentContainer: {
-    padding: 20,
-    justifyContent: "center",
-    paddingTop: 60,
+    padding: 16,
+    paddingTop: 50,
+    paddingBottom: 40,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
+  titleBadge: {
+    backgroundColor: "#FFD700",
+    borderWidth: 4,
+    borderColor: "#000000",
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 4,
+    transform: [{ rotate: "-1deg" }],
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 4, height: 4 },
     marginBottom: 24,
-    textAlign: "center",
+  },
+  titleText: {
+    color: "#000000",
+    fontSize: 26,
+    fontWeight: "900",
+    letterSpacing: 3,
   },
   avatarContainer: {
     alignItems: "center",
     marginBottom: 20,
   },
+  avatarFrame: {
+    borderWidth: 4,
+    borderColor: "#000000",
+    borderRadius: 4,
+    backgroundColor: "#FFFFFF",
+    padding: 4,
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 4, height: 4 },
+    position: "relative",
+  },
   avatar: {
     width: 100,
     height: 100,
-    borderRadius: 50,
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#EAEAEA",
+  },
+  editBadge: {
+    position: "absolute",
+    bottom: -6,
+    right: -6,
+    backgroundColor: "#8A2BE2",
+    paddingVertical: 3,
+    paddingHorizontal: 6,
     borderWidth: 2,
-    borderColor: "#8A2BE2",
+    borderColor: "#000000",
+    borderRadius: 2,
+  },
+  editBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0.5,
   },
   avatarText: {
     color: "#8A2BE2",
-    fontSize: 13,
-    marginTop: 8,
-    fontWeight: "500",
+    fontSize: 11,
+    marginTop: 12,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  inputLabel: {
+    color: "#FFF",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
+    marginBottom: 6,
   },
   input: {
-    backgroundColor: "#1e1e1e",
-    color: "#fff",
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    color: "#000000",
+    padding: 14,
+    borderRadius: 4,
+    borderWidth: 3,
+    borderColor: "#000000",
+    fontSize: 14,
+    fontWeight: "700",
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#333",
   },
   button: {
-    backgroundColor: "#8A2BE2",
+    backgroundColor: "#FFD700", // Gold pop sign up trigger
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 12,
+    borderWidth: 3,
+    borderColor: "#000000",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 4, height: 4 },
   },
   buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
+    color: "#000000",
+    fontWeight: "900",
+    fontSize: 15,
+    letterSpacing: 1.5,
+  },
+  errorBanner: {
+    backgroundColor: "#FFFDE6",
+    borderWidth: 2,
+    borderColor: "#FF4A4A",
+    padding: 10,
+    borderRadius: 4,
+    marginBottom: 16,
   },
   errorText: {
-    color: "#ff4a4a",
-    marginBottom: 16,
+    color: "#FF4A4A",
+    fontWeight: "900",
     textAlign: "center",
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   linkButton: {
-    marginTop: 20,
+    marginTop: 24,
     alignItems: "center",
   },
   linkText: {
     color: "#aaa",
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 });
