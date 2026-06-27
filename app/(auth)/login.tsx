@@ -1,4 +1,5 @@
 // app/(auth)/login.tsx
+import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 import {
@@ -16,6 +17,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -73,6 +75,13 @@ export default function LoginScreen() {
           <Text style={styles.buttonText}>Sign In</Text>
         )}
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => router.push("/(auth)/register")}
+      >
+        <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -116,5 +125,13 @@ const styles = StyleSheet.create({
     color: "#ff4a4a",
     marginBottom: 16,
     textAlign: "center",
+  },
+  linkButton: {
+    marginTop: 20,
+    alignItems: "center",
+  },
+  linkText: {
+    color: "#aaa",
+    fontSize: 14,
   },
 });
