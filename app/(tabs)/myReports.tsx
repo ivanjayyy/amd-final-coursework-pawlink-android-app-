@@ -42,7 +42,6 @@ export default function MyReportsScreen() {
   useEffect(() => {
     if (!user) return;
 
-    // Query pet_reports where userId matches the logged-in user's UID
     const reportsRef = collection(db, "pet_reports");
     const q = query(
       reportsRef,
@@ -71,20 +70,20 @@ export default function MyReportsScreen() {
 
   const handleDeleteReport = (reportId: string) => {
     Alert.alert(
-      "Delete Report",
+      "DELETE REPORT",
       "Are you sure you want to permanently remove this pet report alert?",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "CANCEL", style: "cancel" },
         {
-          text: "Delete",
+          text: "DELETE",
           style: "destructive",
           onPress: async () => {
             try {
               await deleteDoc(doc(db, "pet_reports", reportId));
-              Alert.alert("Success", "Report removed successfully.");
+              Alert.alert("SUCCESS", "Report removed successfully.");
             } catch (err: any) {
               Alert.alert(
-                "Error",
+                "ERROR",
                 err.message || "Could not delete the report.",
               );
             }
@@ -100,16 +99,18 @@ export default function MyReportsScreen() {
     return (
       <View style={styles.card}>
         {item.imageUrl && (
-          <Image
-            source={{ uri: item.imageUrl }}
-            style={styles.cardImage}
-            resizeMode="cover"
-          />
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: item.imageUrl }}
+              style={styles.cardImage}
+              resizeMode="cover"
+            />
+          </View>
         )}
 
         <View style={styles.cardContent}>
           <View style={styles.cardHeader}>
-            <Text style={styles.petName}>{item.petName}</Text>
+            <Text style={styles.petName}>{item.petName.toUpperCase()}</Text>
             <View
               style={[
                 styles.statusBadge,
@@ -121,28 +122,29 @@ export default function MyReportsScreen() {
           </View>
 
           <Text style={styles.detailsText}>
-            <Text style={styles.boldText}>Species: </Text>
-            {item.species} • <Text style={styles.boldText}>Breed: </Text>
-            {item.breed}
+            <Text style={styles.boldText}>SPECIES: </Text>
+            {item.species.toUpperCase()} •{" "}
+            <Text style={styles.boldText}>BREED: </Text>
+            {item.breed.toUpperCase()}
           </Text>
 
           <Text style={styles.detailsText}>
-            <Text style={styles.boldText}>Last Seen: </Text>
-            {item.lastSeenLocation}
+            <Text style={styles.boldText}>LAST SEEN: </Text>
+            {item.lastSeenLocation.toUpperCase()}
           </Text>
 
           <View style={styles.cardFooter}>
             <Text style={styles.footerDate}>
-              Posted on:{" "}
+              FILED:{" "}
               {item.createdAt
                 ? new Date(item.createdAt).toLocaleDateString()
                 : ""}
             </Text>
             <TouchableOpacity
-              style={styles.deleteLink}
+              style={styles.deleteButton}
               onPress={() => handleDeleteReport(item.id)}
             >
-              <Text style={styles.deleteLinkText}>Remove Post</Text>
+              <Text style={styles.deleteButtonText}>REMOVE POST</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -153,17 +155,17 @@ export default function MyReportsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerBar}>
-        <Text style={styles.headerTitle}>My Postings</Text>
+        <Text style={styles.headerTitle}>MY POSTINGS</Text>
       </View>
 
       {loading ? (
         <View style={styles.centerLayout}>
-          <ActivityIndicator size="large" color="#8A2BE2" />
+          <ActivityIndicator size="large" color="#FFD700" />
         </View>
       ) : myReports.length === 0 ? (
         <View style={styles.centerLayout}>
           <Text style={styles.emptyText}>
-            You haven't submitted any pet reports yet.
+            YOU HAVEN'T SUBMITTED ANY PET REPORTS YET.
           </Text>
         </View>
       ) : (
@@ -185,15 +187,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#121212",
   },
   headerBar: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: "#222",
+    backgroundColor: "#1A1A1A",
+    borderBottomWidth: 4,
+    borderColor: "#000000",
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#fff",
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#FFD700", // Yellow accent text
+    letterSpacing: 2,
   },
   centerLayout: {
     flex: 1,
@@ -204,26 +208,37 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#aaa",
     textAlign: "center",
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 1,
   },
   listContainer: {
     padding: 16,
+    paddingBottom: 40,
   },
   card: {
-    backgroundColor: "#1e1e1e",
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#333",
+    backgroundColor: "#FFFFFF", // High contrast white
+    borderRadius: 4,
+    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: "#000000",
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 5, height: 5 },
+  },
+  imageContainer: {
+    borderBottomWidth: 3,
+    borderColor: "#000000",
   },
   cardImage: {
     width: "100%",
-    height: 140,
-    backgroundColor: "#252525",
+    height: 150,
+    backgroundColor: "#EAEAEA",
   },
   cardContent: {
-    padding: 16,
+    padding: 14,
   },
   cardHeader: {
     flexDirection: "row",
@@ -232,55 +247,70 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   petName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#000000",
+    letterSpacing: 1,
   },
   statusBadge: {
     paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#000",
   },
   lostBadge: {
-    backgroundColor: "#d93838",
+    backgroundColor: "#FF4A4A",
   },
   foundBadge: {
-    backgroundColor: "#2e7d32",
+    backgroundColor: "#2E7D32",
   },
   statusText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "900",
     fontSize: 11,
+    letterSpacing: 1,
   },
   detailsText: {
-    color: "#ccc",
-    fontSize: 14,
+    color: "#222222",
+    fontSize: 13,
     marginBottom: 4,
+    fontWeight: "600",
   },
   boldText: {
-    color: "#fff",
-    fontWeight: "600",
+    color: "#000000",
+    fontWeight: "900",
   },
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#2a2a2a",
+    borderTopWidth: 2,
+    borderTopColor: "#000000",
     paddingTop: 12,
     marginTop: 12,
   },
   footerDate: {
     color: "#666",
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: "700",
   },
-  deleteLink: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+  deleteButton: {
+    backgroundColor: "#FF4A4A",
+    borderWidth: 2,
+    borderColor: "#000000",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 2, height: 2 },
   },
-  deleteLinkText: {
-    color: "#ff4a4a",
-    fontSize: 13,
-    fontWeight: "600",
+  deleteButtonText: {
+    color: "#000000",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.5,
   },
 });
