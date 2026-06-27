@@ -1,45 +1,39 @@
-// app/(auth)/forgotPassword.tsx
+// app/(auth)/login.tsx
+import { useRouter } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
+  TextStyle,
   TouchableOpacity,
   View,
-  ActivityIndicator,
-  Alert,
+  ViewStyle,
 } from "react-native";
-import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../../config/firebase";
-import { useRouter } from "expo-router";
 
-export default function ForgotPasswordScreen() {
+export default function LoginScreen() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleResetPassword = async () => {
-    if (!email) {
-      Alert.alert("Missing Email", "Please enter your email address.");
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("ALL INTEL FIELDS MUST BE FILLED");
       return;
     }
 
     setLoading(true);
+    setError("");
 
     try {
-      // Firebase sends the reset link automatically to the provided email
-      await sendPasswordResetEmail(auth, email.trim());
-
-      Alert.alert(
-        "Email Sent",
-        "A password reset link has been sent to your email address. Please check your inbox and spam folder.",
-        [{ text: "OK", onPress: () => router.back() }],
-      );
+      await signInWithEmailAndPassword(auth, email.trim(), password);
     } catch (err: any) {
-      Alert.alert(
-        "Reset Failed",
-        err.message || "Something went wrong. Please check the email entered.",
-      );
+      setError(err.message || "FAILED TO ACCESS AGENT PROFILE");
     } finally {
       setLoading(false);
     }
@@ -47,36 +41,66 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Reset Password</Text>
-      <Text style={styles.subtitle}>
-        Enter your registered email address below, and we will send you a link
-        to reset your password.
-      </Text>
+      {/* Brand Identity Panel */}
+      <View style={styles.brandPanel}>
+        <Text style={styles.brandTitleText}>PAWLINK</Text>
+        <Text style={styles.brandSubtitleText}>RESCUE NETWORK GRID</Text>
+      </View>
 
+      <Text style={styles.title}>WELCOME BACK, AGENT</Text>
+
+      {error ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>⚠ {error.toUpperCase()}</Text>
+        </View>
+      ) : null}
+
+      <Text style={styles.inputLabel}>COMMS ROUTING EMAIL</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email Address"
-        placeholderTextColor="#aaa"
+        placeholder="ENTER REGISTRATION EMAIL..."
+        placeholderTextColor="#888"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
       />
 
+      <Text style={styles.inputLabel}>SECRET ACCESS CODE</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="ENTER PASSWORD ENTRY..."
+        placeholderTextColor="#888"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        autoCapitalize="none"
+      />
+
+      <TouchableOpacity
+        style={styles.forgotPasswordLink}
+        onPress={() => router.push("/(auth)/forgotPassword")}
+      >
+        <Text style={styles.forgotPasswordText}>RECOVER ACCESS CODE?</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity
         style={styles.button}
-        onPress={handleResetPassword}
+        onPress={handleLogin}
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#FFF" />
         ) : (
-          <Text style={styles.buttonText}>Send Reset Link</Text>
+          <Text style={styles.buttonText}>ACCESS GRANTED</Text>
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.linkButton} onPress={() => router.back()}>
-        <Text style={styles.linkText}>Back to Sign In</Text>
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => router.push("/(auth)/register")}
+      >
+        <Text style={styles.linkText}>NEW AGENT? INITIALIZE SIGN UP</Text>
       </TouchableOpacity>
     </View>
   );
@@ -86,51 +110,115 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    padding: 20,
+    padding: 16,
     backgroundColor: "#121212",
-  },
+  } as ViewStyle,
+  brandPanel: {
+    backgroundColor: "#FFD700",
+    borderWidth: 4,
+    borderColor: "#000000",
+    paddingVertical: 14,
+    alignItems: "center",
+    borderRadius: 4,
+    transform: [{ rotate: "-2deg" }],
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 5, height: 5 },
+    marginBottom: 36,
+  } as ViewStyle,
+  brandTitleText: {
+    color: "#000000",
+    fontSize: 36,
+    fontWeight: "900",
+    letterSpacing: 4,
+  } as TextStyle,
+  brandSubtitleText: {
+    color: "#000000",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 2,
+    marginTop: -2,
+  } as TextStyle,
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#aaa",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 20,
-    paddingHorizontal: 10,
-  },
-  input: {
-    backgroundColor: "#1e1e1e",
-    color: "#fff",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  button: {
-    backgroundColor: "#8A2BE2", // Consistent purple accent
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
     fontSize: 16,
-  },
-  linkButton: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-  linkText: {
-    color: "#aaa",
+    fontWeight: "900",
+    color: "#FFFFFF",
+    marginBottom: 24,
+    textAlign: "center",
+    letterSpacing: 1,
+  } as TextStyle,
+  inputLabel: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
+    marginBottom: 6,
+  } as TextStyle,
+  input: {
+    backgroundColor: "#FFFFFF",
+    color: "#000000",
+    padding: 14,
+    borderRadius: 4,
+    borderWidth: 3,
+    borderColor: "#000000",
     fontSize: 14,
-  },
+    fontWeight: "700",
+    marginBottom: 16,
+  } as TextStyle,
+  button: {
+    backgroundColor: "#8A2BE2",
+    padding: 16,
+    borderRadius: 4,
+    alignItems: "center",
+    marginTop: 12,
+    borderWidth: 3,
+    borderColor: "#000000",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 4, height: 4 },
+  } as ViewStyle,
+  buttonText: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 15,
+    letterSpacing: 1.5,
+  } as TextStyle,
+  errorBanner: {
+    backgroundColor: "#FFFDE6",
+    borderWidth: 2,
+    borderColor: "#FF4A4A",
+    padding: 10,
+    borderRadius: 4,
+    marginBottom: 16,
+  } as ViewStyle,
+  errorText: {
+    color: "#FF4A4A",
+    fontWeight: "900",
+    textAlign: "center",
+    fontSize: 11,
+    letterSpacing: 0.5,
+  } as TextStyle,
+  linkButton: {
+    marginTop: 24,
+    alignItems: "center",
+  } as ViewStyle,
+  linkText: {
+    color: "#AAA",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  } as TextStyle,
+  forgotPasswordLink: {
+    alignSelf: "flex-end",
+    marginBottom: 24,
+    marginTop: -4,
+  } as ViewStyle,
+  forgotPasswordText: {
+    color: "#FFD700",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  } as TextStyle,
 });
