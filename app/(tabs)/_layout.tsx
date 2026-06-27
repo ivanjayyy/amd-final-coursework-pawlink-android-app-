@@ -9,14 +9,21 @@ export default function TabsLayout() {
         headerStyle: { backgroundColor: "#121212" },
         headerTintColor: "#fff",
         tabBarStyle: { backgroundColor: "#121212", borderTopColor: "#333" },
-        tabBarActiveTintColor: "#8A2BE2", // Purple accent for active tab
+        tabBarActiveTintColor: "#8A2BE2", // Purple accent
         tabBarInactiveTintColor: "#aaa",
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: "Feed",
+        }}
+      />
+      {/* Add the new report tab configuration here */}
+      <Tabs.Screen
+        name="report"
+        options={{
+          title: "Report Pet",
         }}
       />
     </Tabs>

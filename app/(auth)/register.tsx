@@ -1,6 +1,7 @@
 // app/(auth)/register.tsx
 import { useRouter } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -10,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { auth } from "../../config/firebase";
+import { auth, db } from "../../config/firebase";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -35,7 +36,22 @@ export default function RegisterScreen() {
     setError("");
 
     try {
-      await createUserWithEmailAndPassword(auth, email.trim(), password);
+      // 1. Create the user credential in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password,
+      );
+      const user = userCredential.user;
+
+      // 2. Create a matching profile document in Firestore using their unique UID
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        createdAt: new Date().toISOString(),
+        role: "user", // Perfect placeholder for custom access controls later
+      });
+
       // RootLayout automatically detects the new user session and routes to /(tabs)
     } catch (err: any) {
       setError(err.message || "Failed to create an account");
