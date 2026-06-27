@@ -13,15 +13,15 @@ function RootLayoutNav() {
     if (loading) return;
 
     // Cast segments as any so TypeScript doesn't check literal folder names yet
-    const currentSegments = segments as any;
+    const currentSegments = segments;
     const inAuthGroup = currentSegments[0] === "(auth)";
 
     if (!user && !inAuthGroup) {
       // Cast the route path as any to bypass strict route checking
-      router.replace("/(auth)/login" as any);
+      router.replace("/(auth)/login");
     } else if (user && inAuthGroup) {
       // Cast the route path as any to bypass strict route checking
-      router.replace("/(tabs)" as any);
+      router.replace("/(tabs)");
     }
   }, [user, loading, segments]);
 

@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -20,6 +21,7 @@ interface PetReport {
   breed: string;
   lastSeenLocation: string;
   description: string;
+  imageUrl?: string; // <-- Added to capture the ImgBB cloud image URL
   createdAt: string;
   userEmail: string;
 }
@@ -29,11 +31,9 @@ export default function FeedScreen() {
   const [reports, setReports] = useState<PetReport[]>([]);
 
   useEffect(() => {
-    // 1. Point to our collection and order by newest reports first
     const reportsRef = collection(db, "pet_reports");
     const q = query(reportsRef, orderBy("createdAt", "desc"));
 
-    // 2. Setup real-time synchronized listener
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -50,7 +50,6 @@ export default function FeedScreen() {
       },
     );
 
-    // Clean up listener when screen closes
     return unsubscribe;
   }, []);
 
@@ -58,44 +57,57 @@ export default function FeedScreen() {
     signOut(auth);
   };
 
-  // Individual Pet Card Component Layout
   const renderReportCard = ({ item }: { item: PetReport }) => {
     const isLost = item.status === "lost";
 
     return (
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.petName}>{item.petName}</Text>
-          <View
-            style={[
-              styles.statusBadge,
-              isLost ? styles.lostBadge : styles.foundBadge,
-            ]}
-          >
-            <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+        {/* Render Card Image Banner if it exists */}
+        {item.imageUrl && (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.cardImage}
+            resizeMode="cover"
+          />
+        )}
+
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.petName}>{item.petName}</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                isLost ? styles.lostBadge : styles.foundBadge,
+              ]}
+            >
+              <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+            </View>
           </View>
-        </View>
 
-        <Text style={styles.detailsText}>
-          <Text style={styles.boldText}>Species: </Text>
-          {item.species} • <Text style={styles.boldText}>Breed: </Text>
-          {item.breed}
-        </Text>
-
-        <Text style={styles.detailsText}>
-          <Text style={styles.boldText}>Last Seen: </Text>
-          {item.lastSeenLocation}
-        </Text>
-
-        <Text style={styles.descriptionText}>{item.description}</Text>
-
-        <View style={styles.cardFooter}>
-          <Text style={styles.footerText}>
-            Posted by: {item.userEmail.split("@")[0]}
+          <Text style={styles.detailsText}>
+            <Text style={styles.boldText}>Species: </Text>
+            {item.species} • <Text style={styles.boldText}>Breed: </Text>
+            {item.breed}
           </Text>
-          <Text style={styles.footerText}>
-            {new Date(item.createdAt).toLocaleDateString()}
+
+          <Text style={styles.detailsText}>
+            <Text style={styles.boldText}>Last Seen: </Text>
+            {item.lastSeenLocation}
           </Text>
+
+          <Text style={styles.descriptionText}>{item.description}</Text>
+
+          <View style={styles.cardFooter}>
+            <Text style={styles.footerText}>
+              Posted by:{" "}
+              {item.userEmail ? item.userEmail.split("@")[0] : "Anonymous"}
+            </Text>
+            <Text style={styles.footerText}>
+              {item.createdAt
+                ? new Date(item.createdAt).toLocaleDateString()
+                : ""}
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -179,10 +191,18 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#1e1e1e",
     borderRadius: 12,
-    padding: 16,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: "#333",
+    overflow: "hidden", // Ensures image corners conform to the card boundary radius
+  },
+  cardImage: {
+    width: "100%",
+    height: 180,
+    backgroundColor: "#252525",
+  },
+  cardContent: {
+    padding: 16,
   },
   cardHeader: {
     flexDirection: "row",

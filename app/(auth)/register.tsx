@@ -1,32 +1,84 @@
 // app/(auth)/register.tsx
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
 } from "react-native";
 import { auth, db } from "../../config/firebase";
 
 export default function RegisterScreen() {
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
+  // REPLACE WITH YOUR IMGBB API KEY
+  const IMGBB_API_KEY = "612721d402d431da9fa9e05a60c78e04";
+
+  const uploadProfileImage = async (uri: string): Promise<string | null> => {
+    try {
+      const filename = uri.split("/").pop();
+      const match = /\.(\w+)$/.exec(filename || "");
+      const type = match ? `image/${match[1]}` : `image`;
+
+      const formData = new FormData();
+      formData.append("image", { uri, name: filename, type } as any);
+
+      const response = await fetch(
+        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      const json = await response.json();
+      return json.success ? json.data.url : null;
+    } catch (err) {
+      console.error("Profile image upload failed:", err);
+      return null;
+    }
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Denied",
+        "We need photo library access to upload a avatar!",
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+    });
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword) {
       setError("Please fill in all fields");
       return;
     }
-
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -36,7 +88,14 @@ export default function RegisterScreen() {
     setError("");
 
     try {
-      // 1. Create the user credential in Firebase Authentication
+      let profilePicUrl =
+        "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"; // Default placeholder avatar
+
+      if (imageUri) {
+        const cloudUrl = await uploadProfileImage(imageUri);
+        if (cloudUrl) profilePicUrl = cloudUrl;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email.trim(),
@@ -44,15 +103,14 @@ export default function RegisterScreen() {
       );
       const user = userCredential.user;
 
-      // 2. Create a matching profile document in Firestore using their unique UID
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
+        username: username.trim(),
         email: user.email,
+        profilePicture: profilePicUrl,
         createdAt: new Date().toISOString(),
-        role: "user", // Perfect placeholder for custom access controls later
+        role: "user",
       });
-
-      // RootLayout automatically detects the new user session and routes to /(tabs)
     } catch (err: any) {
       setError(err.message || "Failed to create an account");
     } finally {
@@ -61,10 +119,34 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Create Account</Text>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
+        <Image
+          source={{
+            uri:
+              imageUri ||
+              "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+          }}
+          style={styles.avatar}
+        />
+        <Text style={styles.avatarText}>Choose Profile Picture</Text>
+      </TouchableOpacity>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Username"
+        placeholderTextColor="#aaa"
+        value={username}
+        onChangeText={setUsername}
+      />
 
       <TextInput
         style={styles.input}
@@ -111,16 +193,19 @@ export default function RegisterScreen() {
       <TouchableOpacity style={styles.linkButton} onPress={() => router.back()}>
         <Text style={styles.linkText}>Already have an account? Sign In</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    padding: 20,
     backgroundColor: "#121212",
+  },
+  contentContainer: {
+    padding: 20,
+    justifyContent: "center",
+    paddingTop: 60,
   },
   title: {
     fontSize: 28,
@@ -128,6 +213,24 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginBottom: 24,
     textAlign: "center",
+  },
+  avatarContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#1e1e1e",
+    borderWidth: 2,
+    borderColor: "#8A2BE2",
+  },
+  avatarText: {
+    color: "#8A2BE2",
+    fontSize: 13,
+    marginTop: 8,
+    fontWeight: "500",
   },
   input: {
     backgroundColor: "#1e1e1e",

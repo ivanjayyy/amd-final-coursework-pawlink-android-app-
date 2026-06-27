@@ -1,10 +1,12 @@
 // app/(tabs)/report.tsx
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { addDoc, collection } from "firebase/firestore";
 import React, { useContext, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,14 +21,99 @@ export default function ReportScreen() {
   const { user } = useContext(AuthContext);
   const router = useRouter();
 
-  // Form State matching our schema layout
+  // Form State
   const [status, setStatus] = useState<"lost" | "found">("lost");
   const [petName, setPetName] = useState("");
   const [species, setSpecies] = useState("");
   const [breed, setBreed] = useState("");
   const [lastSeenLocation, setLastSeenLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // REPLACE THIS WITH YOUR ACTUAL IMGBB API KEY
+  const IMGBB_API_KEY = "612721d402d431da9fa9e05a60c78e04";
+
+  // Free Upload Helper Function
+  const uploadImageToImgBB = async (uri: string): Promise<string | null> => {
+    try {
+      const filename = uri.split("/").pop();
+      const match = /\.(\w+)$/.exec(filename || "");
+      const type = match ? `image/${match[1]}` : `image`;
+
+      const formData = new FormData();
+      formData.append("image", { uri, name: filename, type } as any);
+
+      const response = await fetch(
+        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      const json = await response.json();
+      if (json.success) {
+        return json.data.url; // Returns the clean web link string
+      } else {
+        console.error("ImgBB Upload Failed: ", json);
+        return null;
+      }
+    } catch (err) {
+      console.error("Error running network upload: ", err);
+      return null;
+    }
+  };
+
+  // Gallery Picker
+  const pickImage = async () => {
+    const { status: cameraRollStatus } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (cameraRollStatus !== "granted") {
+      Alert.alert(
+        "Permission Denied",
+        "We need storage access permissions to upload pet photos!",
+      );
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
+  // Camera Handler
+  const takePhoto = async () => {
+    const { status: cameraStatus } =
+      await ImagePicker.requestCameraPermissionsAsync();
+    if (cameraStatus !== "granted") {
+      Alert.alert(
+        "Permission Denied",
+        "We need camera privileges to snapshot immediate sightings!",
+      );
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!species || !lastSeenLocation || !description) {
@@ -40,10 +127,20 @@ export default function ReportScreen() {
     setSubmitting(true);
 
     try {
-      // Create a reference to the 'pet_reports' collection
+      let cloudImageUrl = null;
+
+      if (imageUri) {
+        cloudImageUrl = await uploadImageToImgBB(imageUri);
+        if (!cloudImageUrl) {
+          Alert.alert(
+            "Upload Warning",
+            "Failed to host image online, submitting without photo.",
+          );
+        }
+      }
+
       const reportsRef = collection(db, "pet_reports");
 
-      // Submit the payload matching our schema structure
       await addDoc(reportsRef, {
         userId: user?.uid,
         userEmail: user?.email,
@@ -53,6 +150,7 @@ export default function ReportScreen() {
         breed: breed.trim() || "Unknown",
         lastSeenLocation: lastSeenLocation.trim(),
         description: description.trim(),
+        imageUrl: cloudImageUrl, // Permanent URL saved directly into your data doc
         createdAt: new Date().toISOString(),
       });
 
@@ -60,13 +158,12 @@ export default function ReportScreen() {
         {
           text: "OK",
           onPress: () => {
-            // Reset form
             setPetName("");
             setSpecies("");
             setBreed("");
             setLastSeenLocation("");
             setDescription("");
-            // Navigate back to main feed
+            setImageUri(null);
             router.push("/(tabs)");
           },
         },
@@ -161,6 +258,28 @@ export default function ReportScreen() {
         onChangeText={setDescription}
       />
 
+      <Text style={styles.label}>Pet Photo</Text>
+      <View style={styles.photoActionRow}>
+        <TouchableOpacity style={styles.mediaButton} onPress={pickImage}>
+          <Text style={styles.mediaButtonText}>Choose from Gallery</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
+          <Text style={styles.mediaButtonText}>Open Camera</Text>
+        </TouchableOpacity>
+      </View>
+
+      {imageUri && (
+        <View style={styles.previewContainer}>
+          <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+          <TouchableOpacity
+            style={styles.removeImageBadge}
+            onPress={() => setImageUri(null)}
+          >
+            <Text style={styles.removeImageText}>✕ Remove Photo</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <TouchableOpacity
         style={styles.submitButton}
         onPress={handleSubmit}
@@ -232,8 +351,47 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: "top",
   },
+  photoActionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  mediaButton: {
+    flex: 1,
+    backgroundColor: "#1e1e1e",
+    borderWidth: 1,
+    borderColor: "#444",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  mediaButtonText: {
+    color: "#aaa",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  previewContainer: {
+    alignItems: "center",
+    marginTop: 10,
+    position: "relative",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+    backgroundColor: "#1e1e1e",
+  },
+  removeImageBadge: {
+    marginTop: 8,
+    padding: 6,
+  },
+  removeImageText: {
+    color: "#ff4a4a",
+    fontSize: 13,
+    fontWeight: "500",
+  },
   submitButton: {
-    backgroundColor: "#8A2BE2", // Purple theme accent
+    backgroundColor: "#8A2BE2",
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
