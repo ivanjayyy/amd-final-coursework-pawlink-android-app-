@@ -1,22 +1,34 @@
-// context/AuthContext.js
-import { onAuthStateChanged } from "firebase/auth";
-import { createContext, useEffect, useState } from "react";
+// context/AuthContext.tsx
+import { onAuthStateChanged, User } from "firebase/auth";
+import React, { createContext, ReactNode, useEffect, useState } from "react";
 import { auth } from "../config/firebase";
 
-export const AuthContext = createContext({});
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+}
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+// Initialize the context with our type layout
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+});
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Listen for real-time Firebase auth state changes (login / logout)
+    // This will now listen perfectly because auth has a clean Type definition
     const unsubscribe = onAuthStateChanged(auth, (authenticatedUser) => {
       setUser(authenticatedUser);
       setLoading(false);
     });
 
-    // Clean up listener on unmount
     return unsubscribe;
   }, []);
 

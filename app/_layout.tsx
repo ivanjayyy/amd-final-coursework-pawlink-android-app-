@@ -1,8 +1,8 @@
 // app/_layout.tsx
 import { Slot, useRouter, useSegments } from "expo-router";
-import { useEffect, useContext } from "react";
-import { AuthProvider, AuthContext } from "../context/AuthContext";
+import { useContext, useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { AuthContext, AuthProvider } from "../context/AuthContext";
 
 function RootLayoutNav() {
   const { user, loading } = useContext(AuthContext);
@@ -12,12 +12,14 @@ function RootLayoutNav() {
   useEffect(() => {
     if (loading) return;
 
-    // segments[0] can be undefined initially, so we check safely
+    // Check if the user is currently inside the (auth) directory
     const inAuthGroup = segments[0] === "(auth)";
 
     if (!user && !inAuthGroup) {
+      // Redirect to login if not authenticated
       router.replace("/(auth)/login");
     } else if (user && inAuthGroup) {
+      // Redirect to main tabs if already logged in
       router.replace("/(tabs)");
     }
   }, [user, loading, segments]);
