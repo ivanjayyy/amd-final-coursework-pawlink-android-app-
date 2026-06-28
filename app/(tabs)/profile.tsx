@@ -1,6 +1,6 @@
 // app/(tabs)/profile.tsx
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import {
   deleteUser,
   EmailAuthProvider,
@@ -16,6 +16,7 @@ import {
   orderBy,
   query,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import {
@@ -48,17 +49,16 @@ interface PetReport {
   userEmail: string;
 }
 
-const BOOKMARKS_KEY = "@pawlink_bookmarks";
-
 export default function ProfileScreen() {
   const { user } = useContext(AuthContext);
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [profilePic, setProfilePic] = useState("");
   const [fetching, setFetching] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Bookmarks State Data
+  // Bookmarks Cloud State
   const [bookmarkedReports, setBookmarkedReports] = useState<PetReport[]>([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(true);
 
@@ -70,39 +70,56 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
-  // Sync with Firestore all pet_reports, then filter down to matched stored local IDs
+  // Real-time Cloud Bookmark Intersection Listener
   useEffect(() => {
-    const reportsRef = collection(db, "pet_reports");
-    const q = query(reportsRef, orderBy("createdAt", "desc"));
+    if (!user) return;
 
-    const unsubscribe = onSnapshot(
-      q,
-      async (snapshot) => {
-        try {
-          const stored = await AsyncStorage.getItem(BOOKMARKS_KEY);
-          const bookmarkIds: string[] = stored ? JSON.parse(stored) : [];
+    // 1. Listen for bookmarks registered to this explicit authenticated client
+    const bookmarksRef = collection(db, "user_bookmarks");
+    const bookmarksQuery = query(bookmarksRef, where("userId", "==", user.uid));
 
-          const matches: PetReport[] = [];
-          snapshot.forEach((doc) => {
-            if (bookmarkIds.includes(doc.id)) {
-              matches.push({ id: doc.id, ...doc.data() } as PetReport);
-            }
-          });
-          setBookmarkedReports(matches);
-        } catch (err) {
-          console.error("Error matching local records context:", err);
-        } finally {
+    const unsubscribeBookmarks = onSnapshot(
+      bookmarksQuery,
+      (bookmarkSnapshot) => {
+        const targetIds: string[] = [];
+        bookmarkSnapshot.forEach((doc) => {
+          targetIds.push(doc.data().reportId);
+        });
+
+        if (targetIds.length === 0) {
+          setBookmarkedReports([]);
           setLoadingBookmarks(false);
+          return;
         }
-      },
-      (error) => {
-        console.error(error);
-        setLoadingBookmarks(false);
+
+        // 2. Fetch or bind the report records matched with those target bookmarks
+        const reportsRef = collection(db, "pet_reports");
+        const reportsQuery = query(reportsRef, orderBy("createdAt", "desc"));
+
+        const unsubscribeReports = onSnapshot(
+          reportsQuery,
+          (reportSnapshot) => {
+            const matchedReports: PetReport[] = [];
+            reportSnapshot.forEach((doc) => {
+              if (targetIds.includes(doc.id)) {
+                matchedReports.push({ id: doc.id, ...doc.data() } as PetReport);
+              }
+            });
+            setBookmarkedReports(matchedReports);
+            setLoadingBookmarks(false);
+          },
+          (error) => {
+            console.error("Error matching report collection data:", error);
+            setLoadingBookmarks(false);
+          },
+        );
+
+        return () => unsubscribeReports();
       },
     );
 
-    return unsubscribe;
-  }, []);
+    return () => unsubscribeBookmarks();
+  }, [user]);
 
   const fetchUserProfile = async () => {
     try {
@@ -307,17 +324,16 @@ export default function ProfileScreen() {
     }
   };
 
-  const removeBookmarkDirectly = async (id: string) => {
+  const removeBookmarkDirectly = async (reportId: string) => {
+    if (!user) return;
     try {
-      const stored = await AsyncStorage.getItem(BOOKMARKS_KEY);
-      if (stored) {
-        const bookmarkIds: string[] = JSON.parse(stored);
-        const filtered = bookmarkIds.filter((bookmarkId) => bookmarkId !== id);
-        await AsyncStorage.setItem(BOOKMARKS_KEY, JSON.stringify(filtered));
-        // State instantly updates via the active onSnapshot real-time link listener above!
-      }
+      const bookmarkDocId = `${user.uid}_${reportId}`;
+      await deleteDoc(doc(db, "user_bookmarks", bookmarkDocId));
     } catch (err) {
-      console.error("Failed to delete bookmark selection:", err);
+      console.error(
+        "Failed to delete bookmark selection from cloud database:",
+        err,
+      );
     }
   };
 
@@ -384,11 +400,11 @@ export default function ProfileScreen() {
         )}
       </TouchableOpacity>
 
-      {/* --- TikTok Style Intercept Bookmark Panel Container --- */}
+      {/* --- TikTok Style Grid Interface Section --- */}
       <View style={styles.tabSectionHeader}>
         <View style={styles.activeTabIndicator}>
           <Text style={styles.tabHeaderText}>
-            ⭐ TRANSMISSION SAVES ({bookmarkedReports.length})
+            ⭐ CLOUD TRANSMISSION SAVES ({bookmarkedReports.length})
           </Text>
         </View>
       </View>
@@ -408,31 +424,40 @@ export default function ProfileScreen() {
       ) : (
         <View style={styles.gridContainer}>
           {bookmarkedReports.map((item) => (
-            <View key={item.id} style={styles.gridCard}>
-              <Image
-                source={{
-                  uri:
-                    item.imageUrl ||
-                    "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=500",
-                }}
-                style={styles.gridCardImage}
-                resizeMode="cover"
-              />
-              <View style={styles.gridCardMeta}>
-                <Text style={styles.gridCardTitle} numberOfLines={1}>
-                  {item.petName.toUpperCase()}
-                </Text>
-                <Text
-                  style={[
-                    styles.gridStatusLabel,
-                    item.status === "lost"
-                      ? styles.gridLostText
-                      : styles.gridFoundText,
-                  ]}
-                >
-                  {item.status.toUpperCase()}
-                </Text>
-              </View>
+            <View key={item.id} style={styles.gridCardContainer}>
+              {/* Entire TikTok Preview Body acts as Router Trigger */}
+              <TouchableOpacity
+                style={styles.gridCardPressable}
+                activeOpacity={0.85}
+                onPress={() => router.push(`/report-details/${item.id}`)}
+              >
+                <Image
+                  source={{
+                    uri:
+                      item.imageUrl ||
+                      "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=500",
+                  }}
+                  style={styles.gridCardImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.gridCardMeta}>
+                  <Text style={styles.gridCardTitle} numberOfLines={1}>
+                    {item.petName.toUpperCase()}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.gridStatusLabel,
+                      item.status === "lost"
+                        ? styles.gridLostText
+                        : styles.gridFoundText,
+                    ]}
+                  >
+                    {item.status.toUpperCase()}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Dedicated Unsave Operational Switch */}
               <TouchableOpacity
                 style={styles.gridCardPurgeBtn}
                 onPress={() => removeBookmarkDirectly(item.id)}
@@ -458,14 +483,8 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-  } as ViewStyle,
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 40,
-  } as ViewStyle,
+  container: { flex: 1, backgroundColor: "#121212" } as ViewStyle,
+  contentContainer: { padding: 16, paddingBottom: 40 } as ViewStyle,
   headerBar: {
     backgroundColor: "#1A1A1A",
     borderWidth: 3,
@@ -489,10 +508,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   } as ViewStyle,
-  avatarSection: {
-    alignItems: "center",
-    marginBottom: 24,
-  } as ViewStyle,
+  avatarSection: { alignItems: "center", marginBottom: 24 } as ViewStyle,
   avatarFrame: {
     borderWidth: 4,
     borderColor: "#000000",
@@ -594,7 +610,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
   } as ViewStyle,
-  gridCard: {
+  gridCardContainer: {
     width: "48%",
     backgroundColor: "#FFFFFF",
     borderWidth: 3,
@@ -607,6 +623,7 @@ const styles = StyleSheet.create({
     shadowRadius: 0,
     shadowOffset: { width: 3, height: 3 },
   } as ViewStyle,
+  gridCardPressable: { width: "100%" } as ViewStyle,
   gridCardImage: {
     width: "100%",
     height: 120,
@@ -614,9 +631,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderColor: "#000",
   } as ImageStyle,
-  gridCardMeta: {
-    padding: 8,
-  } as ViewStyle,
+  gridCardMeta: { padding: 8 } as ViewStyle,
   gridCardTitle: {
     fontSize: 14,
     fontWeight: "900",

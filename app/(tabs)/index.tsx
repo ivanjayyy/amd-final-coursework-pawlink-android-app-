@@ -1,8 +1,17 @@
 // app/(tabs)/index.tsx
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import { signOut } from "firebase/auth";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore";
+import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,6 +25,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { auth, db } from "../../config/firebase";
+import { AuthContext } from "../../context/AuthContext";
 
 interface PetReport {
   id: string;
@@ -26,82 +36,87 @@ interface PetReport {
   lastSeenLocation: string;
   description: string;
   imageUrl?: string;
-  phoneNumbers?: string[];
-  contactEmails?: string[];
-  reward?: string;
   createdAt: string;
   userEmail: string;
 }
 
-const BOOKMARKS_KEY = "@pawlink_bookmarks";
-
 export default function FeedScreen() {
+  const { user } = useContext(AuthContext);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<PetReport[]>([]);
-  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [bookmarkedReportIds, setBookmarkedReportIds] = useState<string[]>([]);
 
-  // Load Firestore reports & initial device bookmarks
+  // Synchronize dynamic lists directly from Cloud Firestore based on current Auth context state
   useEffect(() => {
-    const loadBookmarks = async () => {
-      try {
-        const stored = await AsyncStorage.getItem(BOOKMARKS_KEY);
-        if (stored) {
-          setBookmarks(JSON.parse(stored));
-        }
-      } catch (err) {
-        console.error("Failed to load local bookmarks:", err);
-      }
-    };
+    if (!user) return;
 
-    loadBookmarks();
-
+    // Real-time Feed Pipeline
     const reportsRef = collection(db, "pet_reports");
-    const q = query(reportsRef, orderBy("createdAt", "desc"));
-
-    return onSnapshot(
-      q,
+    const reportsQuery = query(reportsRef, orderBy("createdAt", "desc"));
+    const unsubscribeReports = onSnapshot(
+      reportsQuery,
       (snapshot) => {
-        const fetchedReports: PetReport[] = [];
+        const fetched: PetReport[] = [];
         snapshot.forEach((doc) => {
-          fetchedReports.push({ id: doc.id, ...doc.data() } as PetReport);
+          fetched.push({ id: doc.id, ...doc.data() } as PetReport);
         });
-        setReports(fetchedReports);
+        setReports(fetched);
         setLoading(false);
       },
-      (error) => {
-        console.error(error);
+      (err) => {
+        console.error(err);
         setLoading(false);
       },
     );
-  }, []);
 
-  // Toggle state helper to update device storage
-  const handleToggleBookmark = async (id: string) => {
+    // Isolated Cloud User Bookmarks Pipeline
+    const bookmarksRef = collection(db, "user_bookmarks");
+    const bookmarksQuery = query(bookmarksRef, where("userId", "==", user.uid));
+    const unsubscribeBookmarks = onSnapshot(bookmarksQuery, (snapshot) => {
+      const activeIds: string[] = [];
+      snapshot.forEach((doc) => {
+        activeIds.push(doc.data().reportId);
+      });
+      setBookmarkedReportIds(activeIds);
+    });
+
+    return () => {
+      unsubscribeReports();
+      unsubscribeBookmarks();
+    };
+  }, [user]);
+
+  const handleToggleBookmark = async (reportId: string) => {
+    if (!user) return;
+    const bookmarkDocId = `${user.uid}_${reportId}`;
+    const docReference = doc(db, "user_bookmarks", bookmarkDocId);
+
     try {
-      let updatedBookmarks = [...bookmarks];
-      if (updatedBookmarks.includes(id)) {
-        updatedBookmarks = updatedBookmarks.filter(
-          (bookmarkId) => bookmarkId !== id,
-        );
+      if (bookmarkedReportIds.includes(reportId)) {
+        await deleteDoc(docReference);
       } else {
-        updatedBookmarks.push(id);
+        await setDoc(docReference, {
+          userId: user.uid,
+          reportId: reportId,
+          savedAt: new Date().toISOString(),
+        });
       }
-      setBookmarks(updatedBookmarks);
-      await AsyncStorage.setItem(
-        BOOKMARKS_KEY,
-        JSON.stringify(updatedBookmarks),
-      );
     } catch (err) {
-      console.error("Failed to update bookmark context:", err);
+      console.error("Cloud bookmark synchronization crash: ", err);
     }
   };
 
   const renderReportCard = ({ item }: { item: PetReport }) => {
     const isLost = item.status === "lost";
-    const isBookmarked = bookmarks.includes(item.id);
+    const isBookmarked = bookmarkedReportIds.includes(item.id);
 
     return (
-      <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.95}
+        onPress={() => router.push(`/report-details/${item.id}`)}
+      >
         {item.imageUrl && (
           <View style={styles.imageContainer}>
             <Image
@@ -111,6 +126,27 @@ export default function FeedScreen() {
             />
           </View>
         )}
+
+        {/* Floating Custom Ribbon Bookmark Flag Element */}
+        <TouchableOpacity
+          style={[
+            styles.floatingBookmark,
+            isBookmarked ? styles.bookmarkActive : styles.bookmarkInactive,
+          ]}
+          onPress={() => handleToggleBookmark(item.id)}
+        >
+          <Text
+            style={[styles.bookmarkIconText, isBookmarked && { color: "#FFF" }]}
+          >
+            {isBookmarked ? "★" : "☆"}
+          </Text>
+          <View
+            style={[
+              styles.bookmarkTailCut,
+              isBookmarked ? styles.tailActive : styles.tailInactive,
+            ]}
+          />
+        </TouchableOpacity>
 
         <View style={styles.cardContent}>
           <View style={styles.cardHeader}>
@@ -125,82 +161,29 @@ export default function FeedScreen() {
             </View>
           </View>
 
-          {/* Comic Style Reward Banner */}
-          {isLost && item.reward ? (
-            <View style={styles.rewardBanner}>
-              <Text style={styles.rewardText}>
-                🎁 REWARD: {item.reward.toUpperCase()}
-              </Text>
-            </View>
-          ) : null}
-
           <Text style={styles.detailsText}>
             <Text style={styles.boldText}>SPECIES: </Text>
-            {item.species.toUpperCase()} •{" "}
-            <Text style={styles.boldText}>BREED: </Text>
-            {item.breed.toUpperCase()}
+            {item.species.toUpperCase()}
           </Text>
 
-          <Text style={styles.detailsText}>
+          <Text style={styles.detailsText} numberOfLines={1}>
             <Text style={styles.boldText}>LAST SEEN: </Text>
             {item.lastSeenLocation.toUpperCase()}
           </Text>
 
-          <Text style={styles.descriptionText}>{item.description}</Text>
-
-          {/* Graphic Panel Contact Grid */}
-          <View style={styles.contactContainer}>
-            <Text style={styles.contactTitle}>CONTACT INTEL:</Text>
-            {item.phoneNumbers &&
-              item.phoneNumbers.map((phone, i) => (
-                <Text key={`p-${i}`} style={styles.contactItem}>
-                  📞 {phone}
-                </Text>
-              ))}
-            {item.contactEmails &&
-              item.contactEmails.map((email, i) => (
-                <Text key={`e-${i}`} style={styles.contactItem}>
-                  ✉️ {email}
-                </Text>
-              ))}
-          </View>
-
-          {/* Comic Panel Functional Interactions */}
-          <TouchableOpacity
-            style={[
-              styles.bookmarkBtn,
-              isBookmarked
-                ? styles.bookmarkActiveBtn
-                : styles.bookmarkInactiveBtn,
-            ]}
-            onPress={() => handleToggleBookmark(item.id)}
-          >
-            <Text style={styles.bookmarkBtnText}>
-              {isBookmarked ? "💥 REMOVE BOOKMARK" : "⭐ BOOKMARK TRANSMISSION"}
-            </Text>
-          </TouchableOpacity>
-
           <View style={styles.cardFooter}>
             <Text style={styles.footerText}>
-              AGENT:{" "}
-              {item.userEmail
-                ? item.userEmail.split("@")[0].toUpperCase()
-                : "HERO"}
+              CLICK TO EXPAND DETAILED INTEL
             </Text>
-            <Text style={styles.footerText}>
-              {item.createdAt
-                ? new Date(item.createdAt).toLocaleDateString()
-                : ""}
-            </Text>
+            <Text style={styles.arrowIndicator}>▶</Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   return (
     <View style={styles.container}>
-      {/* Big Comic Style Header */}
       <View style={styles.comicHeaderContainer}>
         <View style={styles.logoBadge}>
           <Text style={styles.logoText}>PAWLINK</Text>
@@ -222,9 +205,7 @@ export default function FeedScreen() {
         </View>
       ) : reports.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>
-            NO PET ALERTS ACTIVE IN THIS SECTOR.
-          </Text>
+          <Text style={styles.emptyText}>NO ACTIVE INTEL IN THIS SECTOR.</Text>
         </View>
       ) : (
         <FlatList
@@ -314,30 +295,67 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 3,
     borderColor: "#000000",
-    overflow: "hidden",
+    overflow: "visible", // Allows the banner ribbon layout depth override
     shadowColor: "#000",
     shadowOpacity: 1,
     shadowRadius: 0,
     shadowOffset: { width: 5, height: 5 },
+    position: "relative",
   } as ViewStyle,
   imageContainer: {
     borderBottomWidth: 3,
     borderColor: "#000000",
+    overflow: "hidden",
   } as ViewStyle,
   cardImage: {
     width: "100%",
-    height: 200,
+    height: 150,
     backgroundColor: "#EAEAEA",
   } as ImageStyle,
-  cardContent: { padding: 14 } as ViewStyle,
+  floatingBookmark: {
+    position: "absolute",
+    top: -5,
+    right: 15,
+    width: 32,
+    height: 44,
+    borderWidth: 3,
+    borderColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 10,
+    zIndex: 10,
+  } as ViewStyle,
+  bookmarkInactive: { backgroundColor: "#FFD700" } as ViewStyle,
+  bookmarkActive: { backgroundColor: "#8A2BE2" } as ViewStyle,
+  bookmarkIconText: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#000",
+  } as TextStyle,
+  bookmarkTailCut: {
+    position: "absolute",
+    bottom: -3,
+    left: -3,
+    width: 32,
+    height: 0,
+    borderStyle: "solid",
+    borderLeftWidth: 13,
+    borderRightWidth: 13,
+    borderBottomWidth: 10,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+  } as ViewStyle,
+  tailInactive: { borderBottomColor: "#FFFFFF" } as ViewStyle,
+  tailActive: { borderBottomColor: "#FFFFFF" } as ViewStyle,
+  cardContent: { padding: 12 } as ViewStyle,
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   } as ViewStyle,
   petName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "900",
     color: "#000000",
     letterSpacing: 1,
@@ -354,95 +372,34 @@ const styles = StyleSheet.create({
   statusText: {
     color: "#FFF",
     fontWeight: "900",
-    fontSize: 12,
+    fontSize: 11,
     letterSpacing: 1,
-  } as TextStyle,
-  rewardBanner: {
-    backgroundColor: "#FFFDE6",
-    padding: 10,
-    borderRadius: 4,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "#000000",
-    shadowColor: "#000",
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 2, height: 2 },
-  } as ViewStyle,
-  rewardText: {
-    color: "#FF4A4A",
-    fontWeight: "900",
-    fontSize: 14,
-    letterSpacing: 0.5,
   } as TextStyle,
   detailsText: {
     color: "#222222",
     fontSize: 13,
-    marginBottom: 4,
+    marginBottom: 3,
     fontWeight: "600",
   } as TextStyle,
   boldText: { color: "#000000", fontWeight: "900" } as TextStyle,
-  descriptionText: {
-    color: "#444444",
-    fontSize: 14,
-    fontWeight: "500",
-    marginTop: 6,
-    marginBottom: 14,
-    lineHeight: 18,
-  } as TextStyle,
-  contactContainer: {
-    backgroundColor: "#F0F0F0",
-    padding: 10,
-    borderRadius: 4,
-    marginTop: 4,
-    borderWidth: 2,
-    borderColor: "#000000",
-    marginBottom: 14,
-  } as ViewStyle,
-  contactTitle: {
-    color: "#8A2BE2",
-    fontSize: 12,
-    fontWeight: "900",
-    marginBottom: 6,
-    letterSpacing: 1,
-  } as TextStyle,
-  contactItem: {
-    color: "#111",
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 3,
-  } as TextStyle,
-  bookmarkBtn: {
-    padding: 12,
-    borderRadius: 4,
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: "#000000",
-    shadowColor: "#000",
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 3, height: 3 },
-    marginBottom: 4,
-  } as ViewStyle,
-  bookmarkInactiveBtn: {
-    backgroundColor: "#FFD700", // Yellow accent for adding
-  } as ViewStyle,
-  bookmarkActiveBtn: {
-    backgroundColor: "#8A2BE2", // Deep violet accent for active
-  } as ViewStyle,
-  bookmarkBtnText: {
-    color: "#000000",
-    fontWeight: "900",
-    fontSize: 12,
-    letterSpacing: 1,
-  } as TextStyle,
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     borderTopWidth: 2,
     borderTopColor: "#000000",
-    paddingTop: 10,
-    marginTop: 12,
+    paddingTop: 8,
+    marginTop: 8,
   } as ViewStyle,
-  footerText: { color: "#666", fontSize: 11, fontWeight: "700" } as TextStyle,
+  footerText: {
+    color: "#8A2BE2",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  } as TextStyle,
+  arrowIndicator: {
+    color: "#000",
+    fontWeight: "900",
+    fontSize: 12,
+  } as TextStyle,
 });
