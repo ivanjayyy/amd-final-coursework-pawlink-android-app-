@@ -1,16 +1,20 @@
 // app/(tabs)/index.tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { signOut } from "firebase/auth";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  ImageStyle,
   StyleSheet,
   Text,
-  View,
-  FlatList,
+  TextStyle,
   TouchableOpacity,
-  ActivityIndicator,
-  Image,
+  View,
+  ViewStyle,
 } from "react-native";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
-import { signOut } from "firebase/auth";
 import { auth, db } from "../../config/firebase";
 
 interface PetReport {
@@ -29,11 +33,28 @@ interface PetReport {
   userEmail: string;
 }
 
+const BOOKMARKS_KEY = "@pawlink_bookmarks";
+
 export default function FeedScreen() {
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<PetReport[]>([]);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
 
+  // Load Firestore reports & initial device bookmarks
   useEffect(() => {
+    const loadBookmarks = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(BOOKMARKS_KEY);
+        if (stored) {
+          setBookmarks(JSON.parse(stored));
+        }
+      } catch (err) {
+        console.error("Failed to load local bookmarks:", err);
+      }
+    };
+
+    loadBookmarks();
+
     const reportsRef = collection(db, "pet_reports");
     const q = query(reportsRef, orderBy("createdAt", "desc"));
 
@@ -54,8 +75,30 @@ export default function FeedScreen() {
     );
   }, []);
 
+  // Toggle state helper to update device storage
+  const handleToggleBookmark = async (id: string) => {
+    try {
+      let updatedBookmarks = [...bookmarks];
+      if (updatedBookmarks.includes(id)) {
+        updatedBookmarks = updatedBookmarks.filter(
+          (bookmarkId) => bookmarkId !== id,
+        );
+      } else {
+        updatedBookmarks.push(id);
+      }
+      setBookmarks(updatedBookmarks);
+      await AsyncStorage.setItem(
+        BOOKMARKS_KEY,
+        JSON.stringify(updatedBookmarks),
+      );
+    } catch (err) {
+      console.error("Failed to update bookmark context:", err);
+    }
+  };
+
   const renderReportCard = ({ item }: { item: PetReport }) => {
     const isLost = item.status === "lost";
+    const isBookmarked = bookmarks.includes(item.id);
 
     return (
       <View style={styles.card}>
@@ -122,6 +165,21 @@ export default function FeedScreen() {
               ))}
           </View>
 
+          {/* Comic Panel Functional Interactions */}
+          <TouchableOpacity
+            style={[
+              styles.bookmarkBtn,
+              isBookmarked
+                ? styles.bookmarkActiveBtn
+                : styles.bookmarkInactiveBtn,
+            ]}
+            onPress={() => handleToggleBookmark(item.id)}
+          >
+            <Text style={styles.bookmarkBtnText}>
+              {isBookmarked ? "💥 REMOVE BOOKMARK" : "⭐ BOOKMARK TRANSMISSION"}
+            </Text>
+          </TouchableOpacity>
+
           <View style={styles.cardFooter}>
             <Text style={styles.footerText}>
               AGENT:{" "}
@@ -182,7 +240,7 @@ export default function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" },
+  container: { flex: 1, backgroundColor: "#121212" } as ViewStyle,
   comicHeaderContainer: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -190,9 +248,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A1A1A",
     borderBottomWidth: 4,
     borderColor: "#000000",
-  },
+  } as ViewStyle,
   logoBadge: {
-    backgroundColor: "#FFD700", // Bright golden comic yellow
+    backgroundColor: "#FFD700",
     borderWidth: 4,
     borderColor: "#000000",
     paddingVertical: 6,
@@ -204,25 +262,25 @@ const styles = StyleSheet.create({
     shadowRadius: 0,
     shadowOffset: { width: 4, height: 4 },
     marginBottom: 8,
-  },
+  } as ViewStyle,
   logoText: {
     color: "#000000",
     fontSize: 32,
     fontWeight: "900",
     letterSpacing: 4,
-  },
+  } as TextStyle,
   headerBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 4,
-  },
+  } as ViewStyle,
   headerTitle: {
     fontSize: 14,
     fontWeight: "900",
     color: "#FFF",
     letterSpacing: 1.5,
-  },
+  } as TextStyle,
   signOutBtn: {
     backgroundColor: "#FF4A4A",
     borderWidth: 2,
@@ -230,28 +288,28 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 4,
-  },
+  } as ViewStyle,
   signOutText: {
     color: "#000",
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1,
-  },
+  } as TextStyle,
   centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 40,
-  },
+  } as ViewStyle,
   emptyText: {
     color: "#FFD700",
     fontSize: 14,
     fontWeight: "900",
     textAlign: "center",
-  },
-  listContainer: { padding: 16, paddingBottom: 40 },
+  } as TextStyle,
+  listContainer: { padding: 16, paddingBottom: 40 } as ViewStyle,
   card: {
-    backgroundColor: "#FFFFFF", // High contrast white interior panels
+    backgroundColor: "#FFFFFF",
     borderRadius: 4,
     marginBottom: 20,
     borderWidth: 3,
@@ -261,42 +319,46 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
     shadowOffset: { width: 5, height: 5 },
-  },
+  } as ViewStyle,
   imageContainer: {
     borderBottomWidth: 3,
     borderColor: "#000000",
-  },
-  cardImage: { width: "100%", height: 200, backgroundColor: "#EAEAEA" },
-  cardContent: { padding: 14 },
+  } as ViewStyle,
+  cardImage: {
+    width: "100%",
+    height: 200,
+    backgroundColor: "#EAEAEA",
+  } as ImageStyle,
+  cardContent: { padding: 14 } as ViewStyle,
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
-  },
+  } as ViewStyle,
   petName: {
     fontSize: 22,
     fontWeight: "900",
     color: "#000000",
     letterSpacing: 1,
-  },
+  } as TextStyle,
   statusBadge: {
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 4,
     borderWidth: 2,
     borderColor: "#000",
-  },
-  lostBadge: { backgroundColor: "#FF4A4A" },
-  foundBadge: { backgroundColor: "#2E7D32" },
+  } as ViewStyle,
+  lostBadge: { backgroundColor: "#FF4A4A" } as ViewStyle,
+  foundBadge: { backgroundColor: "#2E7D32" } as ViewStyle,
   statusText: {
     color: "#FFF",
     fontWeight: "900",
     fontSize: 12,
     letterSpacing: 1,
-  },
+  } as TextStyle,
   rewardBanner: {
-    backgroundColor: "#FFFDE6", // Halftone cream style pop banner
+    backgroundColor: "#FFFDE6",
     padding: 10,
     borderRadius: 4,
     marginBottom: 12,
@@ -306,20 +368,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
     shadowOffset: { width: 2, height: 2 },
-  },
+  } as ViewStyle,
   rewardText: {
     color: "#FF4A4A",
     fontWeight: "900",
     fontSize: 14,
     letterSpacing: 0.5,
-  },
+  } as TextStyle,
   detailsText: {
     color: "#222222",
     fontSize: 13,
     marginBottom: 4,
     fontWeight: "600",
-  },
-  boldText: { color: "#000000", fontWeight: "900" },
+  } as TextStyle,
+  boldText: { color: "#000000", fontWeight: "900" } as TextStyle,
   descriptionText: {
     color: "#444444",
     fontSize: 14,
@@ -327,7 +389,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 14,
     lineHeight: 18,
-  },
+  } as TextStyle,
   contactContainer: {
     backgroundColor: "#F0F0F0",
     padding: 10,
@@ -335,20 +397,45 @@ const styles = StyleSheet.create({
     marginTop: 4,
     borderWidth: 2,
     borderColor: "#000000",
-  },
+    marginBottom: 14,
+  } as ViewStyle,
   contactTitle: {
     color: "#8A2BE2",
     fontSize: 12,
     fontWeight: "900",
     marginBottom: 6,
     letterSpacing: 1,
-  },
+  } as TextStyle,
   contactItem: {
     color: "#111",
     fontSize: 13,
     fontWeight: "700",
     marginBottom: 3,
-  },
+  } as TextStyle,
+  bookmarkBtn: {
+    padding: 12,
+    borderRadius: 4,
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: "#000000",
+    shadowColor: "#000",
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 3, height: 3 },
+    marginBottom: 4,
+  } as ViewStyle,
+  bookmarkInactiveBtn: {
+    backgroundColor: "#FFD700", // Yellow accent for adding
+  } as ViewStyle,
+  bookmarkActiveBtn: {
+    backgroundColor: "#8A2BE2", // Deep violet accent for active
+  } as ViewStyle,
+  bookmarkBtnText: {
+    color: "#000000",
+    fontWeight: "900",
+    fontSize: 12,
+    letterSpacing: 1,
+  } as TextStyle,
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -356,6 +443,6 @@ const styles = StyleSheet.create({
     borderTopColor: "#000000",
     paddingTop: 10,
     marginTop: 12,
-  },
-  footerText: { color: "#666", fontSize: 11, fontWeight: "700" },
+  } as ViewStyle,
+  footerText: { color: "#666", fontSize: 11, fontWeight: "700" } as TextStyle,
 });
