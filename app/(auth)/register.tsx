@@ -1,12 +1,8 @@
 // app/(auth)/register.tsx
-import * as ImagePicker from "expo-image-picker";
+import React from "react";
 import { useRouter } from "expo-router";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -15,109 +11,26 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { auth, db } from "../../config/firebase";
+import { useRegister } from "../../hooks/useRegister"; // Adjust path to hook if needed
 
 export default function RegisterScreen() {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
 
-  // REPLACE WITH YOUR IMGBB API KEY
-  const IMGBB_API_KEY = "612721d402d431da9fa9e05a60c78e04";
-
-  const uploadProfileImage = async (uri: string): Promise<string | null> => {
-    try {
-      const filename = uri.split("/").pop();
-      const match = /\.(\w+)$/.exec(filename || "");
-      const type = match ? `image/${match[1]}` : `image`;
-
-      const formData = new FormData();
-      formData.append("image", { uri, name: filename, type } as any);
-
-      const response = await fetch(
-        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-
-      const json = await response.json();
-      return json.success ? json.data.url : null;
-    } catch (err) {
-      console.error("Profile image upload failed:", err);
-      return null;
-    }
-  };
-
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "PERMISSION DENIED",
-        "We need photo library access to upload an avatar!",
-      );
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.6,
-    });
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-    }
-  };
-
-  const handleRegister = async () => {
-    if (!username || !email || !password || !confirmPassword) {
-      setError("ALL INTEL FIELDS MUST BE FILLED");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("PASSCODES DO NOT MATCH");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      let profilePicUrl =
-        "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
-
-      if (imageUri) {
-        const cloudUrl = await uploadProfileImage(imageUri);
-        if (cloudUrl) profilePicUrl = cloudUrl;
-      }
-
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password,
-      );
-      const user = userCredential.user;
-
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        username: username.trim(),
-        email: user.email,
-        profilePicture: profilePicUrl,
-        createdAt: new Date().toISOString(),
-        role: "user",
-      });
-    } catch (err: any) {
-      setError(err.message || "FAILED TO CREATE AGENT FILE");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    username,
+    setUsername,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    imageUri,
+    loading,
+    error,
+    pickImage,
+    handleRegister,
+  } = useRegister();
 
   return (
     <ScrollView
@@ -312,7 +225,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   button: {
-    backgroundColor: "#FFD700", // Gold pop sign up trigger
+    backgroundColor: "#FFD700",
     padding: 16,
     borderRadius: 4,
     alignItems: "center",

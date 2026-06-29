@@ -1,4 +1,3 @@
-// app/(tabs)/profile.tsx
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import {
@@ -12,42 +11,24 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  onSnapshot,
-  orderBy,
-  query,
   updateDoc,
-  where,
 } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
-  ImageStyle,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from "react-native";
 import { auth, db } from "../../config/firebase";
 import { AuthContext } from "../../context/AuthContext";
-
-interface PetReport {
-  id: string;
-  petName: string;
-  status: "lost" | "found";
-  species: string;
-  breed: string;
-  lastSeenLocation: string;
-  description: string;
-  imageUrl?: string;
-  createdAt: string;
-  userEmail: string;
-}
+import { useProfileBookmarks } from "../../hooks/useProfileBookmarks";
+import { ProfileBookmarkGridCard } from "../../components/ProfileBookmarkGridCard";
+import { ProfileFormFields } from "../../components/ProfileFormFields";
 
 export default function ProfileScreen() {
   const { user } = useContext(AuthContext);
@@ -58,67 +39,14 @@ export default function ProfileScreen() {
   const [fetching, setFetching] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Bookmarks Cloud State
-  const [bookmarkedReports, setBookmarkedReports] = useState<PetReport[]>([]);
-  const [loadingBookmarks, setLoadingBookmarks] = useState(true);
-
+  const { bookmarkedReports, loadingBookmarks, handleToggleBookmark } =
+    useProfileBookmarks(user?.uid);
   const IMGBB_API_KEY = "612721d402d431da9fa9e05a60c78e04";
 
   useEffect(() => {
     if (user) {
       fetchUserProfile();
     }
-  }, [user]);
-
-  // Real-time Cloud Bookmark Intersection Listener
-  useEffect(() => {
-    if (!user) return;
-
-    // 1. Listen for bookmarks registered to this explicit authenticated client
-    const bookmarksRef = collection(db, "user_bookmarks");
-    const bookmarksQuery = query(bookmarksRef, where("userId", "==", user.uid));
-
-    const unsubscribeBookmarks = onSnapshot(
-      bookmarksQuery,
-      (bookmarkSnapshot) => {
-        const targetIds: string[] = [];
-        bookmarkSnapshot.forEach((doc) => {
-          targetIds.push(doc.data().reportId);
-        });
-
-        if (targetIds.length === 0) {
-          setBookmarkedReports([]);
-          setLoadingBookmarks(false);
-          return;
-        }
-
-        // 2. Fetch or bind the report records matched with those target bookmarks
-        const reportsRef = collection(db, "pet_reports");
-        const reportsQuery = query(reportsRef, orderBy("createdAt", "desc"));
-
-        const unsubscribeReports = onSnapshot(
-          reportsQuery,
-          (reportSnapshot) => {
-            const matchedReports: PetReport[] = [];
-            reportSnapshot.forEach((doc) => {
-              if (targetIds.includes(doc.id)) {
-                matchedReports.push({ id: doc.id, ...doc.data() } as PetReport);
-              }
-            });
-            setBookmarkedReports(matchedReports);
-            setLoadingBookmarks(false);
-          },
-          (error) => {
-            console.error("Error matching report collection data:", error);
-            setLoadingBookmarks(false);
-          },
-        );
-
-        return () => unsubscribeReports();
-      },
-    );
-
-    return () => unsubscribeBookmarks();
   }, [user]);
 
   const fetchUserProfile = async () => {
@@ -208,6 +136,7 @@ export default function ProfileScreen() {
           { text: "CANCEL", style: "cancel", onPress: () => resolve("") },
           {
             text: "CONFIRM",
+            // Explicitly define the parameter type here 👇
             onPress: (password: string | undefined) => resolve(password || ""),
           },
         ],
@@ -217,25 +146,14 @@ export default function ProfileScreen() {
   };
 
   const handleUpdateDetails = async () => {
-    if (!username.trim()) {
-      Alert.alert(
-        "VALIDATION ERROR",
-        "The Identity Code name can't be left blank.",
-      );
-      return;
-    }
-    if (!email.trim()) {
-      Alert.alert(
-        "VALIDATION ERROR",
-        "The Comms link channel email can't be empty.",
-      );
+    if (!username.trim() || !email.trim()) {
+      Alert.alert("VALIDATION ERROR", "Form fields cannot be left blank.");
       return;
     }
 
     setUpdating(true);
     try {
       const currentUser = auth.currentUser;
-
       if (
         currentUser &&
         email.trim().toLowerCase() !== currentUser.email?.toLowerCase()
@@ -251,11 +169,10 @@ export default function ProfileScreen() {
           password,
         );
         await reauthenticateWithCredential(currentUser, credential);
-
         await verifyBeforeUpdateEmail(currentUser, email.trim().toLowerCase());
         Alert.alert(
           "VERIFICATION SENT",
-          "A security check link has been deployed to your new email address. Your record updates completely once confirmed.",
+          "A security verification link has been sent to your new email address.",
         );
       }
 
@@ -263,77 +180,14 @@ export default function ProfileScreen() {
         username: username.trim(),
         email: email.trim().toLowerCase(),
       });
-
       Alert.alert("SUCCESS", "Hero file metadata synchronized flawlessly!");
     } catch (err: any) {
-      if (err.code === "auth/email-already-in-use") {
-        Alert.alert(
-          "TRANSMISSION FAIL",
-          "This email frequency is already claimed by another agent.",
-        );
-      } else if (err.code === "auth/wrong-password") {
-        Alert.alert("ACCESS DENIED", "Incorrect passcode validation sequence.");
-      } else {
-        Alert.alert(
-          "UPDATE FAILED",
-          err.message || "Failed to alter data layers.",
-        );
-      }
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "ACCOUNT SELF-DESTRUCT",
-      "Are you entirely certain you want to purge your data file from our system grid? This wipe is total and irreversible.",
-      [
-        { text: "CANCEL", style: "cancel" },
-        {
-          text: "PERMANENT WIPEOUT",
-          style: "destructive",
-          onPress: executeAccountDeletion,
-        },
-      ],
-    );
-  };
-
-  const executeAccountDeletion = async () => {
-    setUpdating(true);
-    try {
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        await deleteDoc(doc(db, "users", currentUser.uid));
-        await deleteUser(currentUser);
-      }
-    } catch (err: any) {
-      if (err.code === "auth/requires-recent-login") {
-        Alert.alert(
-          "RE-AUTHENTICATION REQUIRED",
-          "For severe safety tasks, please log out, cycle back into the system, and trigger this purge command instantly.",
-        );
-      } else {
-        Alert.alert(
-          "DELETION FAILURE",
-          err.message || "An unexpected error blocked the wipe.",
-        );
-      }
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const removeBookmarkDirectly = async (reportId: string) => {
-    if (!user) return;
-    try {
-      const bookmarkDocId = `${user.uid}_${reportId}`;
-      await deleteDoc(doc(db, "user_bookmarks", bookmarkDocId));
-    } catch (err) {
-      console.error(
-        "Failed to delete bookmark selection from cloud database:",
-        err,
+      Alert.alert(
+        "UPDATE FAILED",
+        err.message || "Failed to alter data layers.",
       );
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -368,24 +222,11 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionLabel}>IDENTITY CALLSIGN</Text>
-      <TextInput
-        style={styles.input}
-        value={username}
-        onChangeText={setUsername}
-        placeholder="ENTER HERO ALIAS..."
-        placeholderTextColor="#888"
-      />
-
-      <Text style={styles.sectionLabel}>COMMS ROUTING EMAIL</Text>
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="ENTER NEW FREQUENCY..."
-        placeholderTextColor="#888"
-        keyboardType="email-address"
-        autoCapitalize="none"
+      <ProfileFormFields
+        username={username}
+        setUsername={setUsername}
+        email={email}
+        setEmail={setEmail}
       />
 
       <TouchableOpacity
@@ -400,7 +241,6 @@ export default function ProfileScreen() {
         )}
       </TouchableOpacity>
 
-      {/* --- TikTok Style Grid Interface Section --- */}
       <View style={styles.tabSectionHeader}>
         <View style={styles.activeTabIndicator}>
           <Text style={styles.tabHeaderText}>
@@ -424,57 +264,31 @@ export default function ProfileScreen() {
       ) : (
         <View style={styles.gridContainer}>
           {bookmarkedReports.map((item) => (
-            <View key={item.id} style={styles.gridCardContainer}>
-              {/* Entire TikTok Preview Body acts as Router Trigger */}
-              <TouchableOpacity
-                style={styles.gridCardPressable}
-                activeOpacity={0.85}
-                onPress={() => router.push(`/report-details/${item.id}`)}
-              >
-                <Image
-                  source={{
-                    uri:
-                      item.imageUrl ||
-                      "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=500",
-                  }}
-                  style={styles.gridCardImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.gridCardMeta}>
-                  <Text style={styles.gridCardTitle} numberOfLines={1}>
-                    {item.petName.toUpperCase()}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.gridStatusLabel,
-                      item.status === "lost"
-                        ? styles.gridLostText
-                        : styles.gridFoundText,
-                    ]}
-                  >
-                    {item.status.toUpperCase()}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Dedicated Unsave Operational Switch */}
-              <TouchableOpacity
-                style={styles.gridCardPurgeBtn}
-                onPress={() => removeBookmarkDirectly(item.id)}
-              >
-                <Text style={styles.gridPurgeBtnText}>UNSAVE</Text>
-              </TouchableOpacity>
-            </View>
+            <ProfileBookmarkGridCard
+              key={item.id}
+              item={item}
+              onPress={() => router.push(`/report-details/${item.id}`)}
+              onBookmarkToggle={() => handleToggleBookmark(item.id)}
+            />
           ))}
         </View>
       )}
 
       <View style={styles.thickDivider} />
-
       <TouchableOpacity
         style={styles.deleteButton}
-        onPress={handleDeleteAccount}
-        disabled={updating}
+        onPress={() =>
+          Alert.alert("PURGE", "Wipe total architecture?", [
+            { text: "CANCEL" },
+            {
+              text: "WIPE",
+              onPress: async () => {
+                await deleteDoc(doc(db, "users", user!.uid));
+                await deleteUser(auth.currentUser!);
+              },
+            },
+          ])
+        }
       >
         <Text style={styles.deleteButtonText}>WIPE CLIENT ACCOUNT</Text>
       </TouchableOpacity>
@@ -483,8 +297,8 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" } as ViewStyle,
-  contentContainer: { padding: 16, paddingBottom: 40 } as ViewStyle,
+  container: { flex: 1, backgroundColor: "#121212" },
+  contentContainer: { padding: 16, paddingBottom: 40 },
   headerBar: {
     backgroundColor: "#1A1A1A",
     borderWidth: 3,
@@ -494,21 +308,21 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginBottom: 24,
     transform: [{ rotate: "0.5deg" }],
-  } as ViewStyle,
+  },
   headerTitle: {
     fontSize: 16,
     fontWeight: "900",
     color: "#FFD700",
     letterSpacing: 2,
     textAlign: "center",
-  } as TextStyle,
+  },
   centered: {
     flex: 1,
     backgroundColor: "#121212",
     justifyContent: "center",
     alignItems: "center",
-  } as ViewStyle,
-  avatarSection: { alignItems: "center", marginBottom: 24 } as ViewStyle,
+  },
+  avatarSection: { alignItems: "center", marginBottom: 24 },
   avatarFrame: {
     borderWidth: 4,
     borderColor: "#000000",
@@ -520,12 +334,8 @@ const styles = StyleSheet.create({
     shadowRadius: 0,
     shadowOffset: { width: 5, height: 5 },
     position: "relative",
-  } as ViewStyle,
-  largeAvatar: {
-    width: 130,
-    height: 130,
-    backgroundColor: "#EAEAEA",
-  } as ImageStyle,
+  },
+  largeAvatar: { width: 130, height: 130, backgroundColor: "#EAEAEA" },
   editBadge: {
     position: "absolute",
     bottom: -6,
@@ -536,32 +346,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#000000",
     borderRadius: 2,
-  } as ViewStyle,
+  },
   editBadgeText: {
     color: "#000000",
     fontSize: 10,
     fontWeight: "900",
     letterSpacing: 1,
-  } as TextStyle,
-  sectionLabel: {
-    color: "#FFF",
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 1.5,
-    marginBottom: 6,
-    marginTop: 12,
-  } as TextStyle,
-  input: {
-    backgroundColor: "#FFFFFF",
-    color: "#000000",
-    padding: 14,
-    borderRadius: 4,
-    borderWidth: 3,
-    borderColor: "#000000",
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 16,
-  } as TextStyle,
+  },
   saveButton: {
     backgroundColor: "#8A2BE2",
     padding: 16,
@@ -574,20 +365,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
     shadowOffset: { width: 4, height: 4 },
-  } as ViewStyle,
+  },
   saveButtonText: {
     color: "#FFFFFF",
     fontWeight: "900",
     fontSize: 15,
     letterSpacing: 1.5,
-  } as TextStyle,
+  },
   tabSectionHeader: {
     marginTop: 36,
     borderBottomWidth: 3,
     borderColor: "#000000",
     flexDirection: "row",
     marginBottom: 16,
-  } as ViewStyle,
+  },
   activeTabIndicator: {
     backgroundColor: "#1A1A1A",
     borderWidth: 3,
@@ -598,65 +389,18 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
     marginBottom: -3,
-  } as ViewStyle,
+  },
   tabHeaderText: {
     color: "#FFD700",
     fontWeight: "900",
     fontSize: 12,
     letterSpacing: 1,
-  } as TextStyle,
+  },
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-  } as ViewStyle,
-  gridCardContainer: {
-    width: "48%",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 3,
-    borderColor: "#000000",
-    borderRadius: 4,
-    marginBottom: 16,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 3, height: 3 },
-  } as ViewStyle,
-  gridCardPressable: { width: "100%" } as ViewStyle,
-  gridCardImage: {
-    width: "100%",
-    height: 120,
-    backgroundColor: "#EAEAEA",
-    borderBottomWidth: 2,
-    borderColor: "#000",
-  } as ImageStyle,
-  gridCardMeta: { padding: 8 } as ViewStyle,
-  gridCardTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#000",
-  } as TextStyle,
-  gridStatusLabel: {
-    fontSize: 10,
-    fontWeight: "900",
-    marginTop: 2,
-  } as TextStyle,
-  gridLostText: { color: "#FF4A4A" } as TextStyle,
-  gridFoundText: { color: "#2E7D32" } as TextStyle,
-  gridCardPurgeBtn: {
-    backgroundColor: "#1A1A1A",
-    paddingVertical: 6,
-    alignItems: "center",
-    borderTopWidth: 2,
-    borderColor: "#000",
-  } as ViewStyle,
-  gridPurgeBtnText: {
-    color: "#FF4A4A",
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-  } as TextStyle,
+  },
   emptyGridPlaceholder: {
     backgroundColor: "#1A1A1A",
     borderWidth: 2,
@@ -664,18 +408,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     padding: 24,
     alignItems: "center",
-  } as ViewStyle,
+  },
   emptyGridText: {
     color: "#666",
     fontSize: 11,
     fontWeight: "700",
     textAlign: "center",
-  } as TextStyle,
-  thickDivider: {
-    height: 4,
-    backgroundColor: "#000000",
-    marginVertical: 32,
-  } as ViewStyle,
+  },
+  thickDivider: { height: 4, backgroundColor: "#000000", marginVertical: 32 },
   deleteButton: {
     backgroundColor: "#FF4A4A",
     borderWidth: 3,
@@ -687,11 +427,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
     shadowOffset: { width: 4, height: 4 },
-  } as ViewStyle,
+  },
   deleteButtonText: {
     color: "#000000",
     fontWeight: "900",
     fontSize: 14,
     letterSpacing: 1,
-  } as TextStyle,
+  },
 });

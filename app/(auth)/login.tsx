@@ -1,7 +1,6 @@
 // app/(auth)/login.tsx
+import React from "react";
 import { useRouter } from "expo-router";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import React, { useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -10,32 +9,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { auth } from "../../config/firebase";
+import { useLogin } from "../../hooks/useLogin"; // Adjust path if needed
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("ALL INTEL FIELDS MUST BE FILLED");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-    } catch (err: any) {
-      setError(err.message || "FAILED TO ACCESS AGENT PROFILE");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    loading,
+    error,
+    handleLogin,
+  } = useLogin();
 
   return (
     <View style={styles.container}>

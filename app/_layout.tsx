@@ -8,30 +8,44 @@ import { AuthContext, AuthProvider } from "../context/AuthContext";
 LogBox.ignoreLogs(["@firebase/firestore: Firestore", "BloomFilter error"]);
 
 function RootLayoutNav() {
-  const { user, loading } = useContext(AuthContext);
+  const { user, role, loading } = useContext(AuthContext); // <-- Pulled role from context
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
 
-    // Cast segments as any so TypeScript doesn't check literal folder names yet
     const currentSegments = segments;
     const inAuthGroup = currentSegments[0] === "(auth)";
 
-    if (!user && !inAuthGroup) {
-      // Cast the route path as any to bypass strict route checking
-      router.replace("/(auth)/login");
-    } else if (user && inAuthGroup) {
-      // Cast the route path as any to bypass strict route checking
-      router.replace("/(tabs)");
+    if (!user) {
+      // If the agent is not signed in and not in the auth zone, send them to login
+      if (!inAuthGroup) {
+        router.replace("/(auth)/login");
+      }
+    } else {
+      // Agent is logged in successfully. Now check security clearance role:
+      if (role === "ADMIN") {
+        // If you ever build an admin panel, route them here instead:
+        // router.replace("/(admin)");
+      } else if (inAuthGroup) {
+        // Standard user clearance: Route away from login/register grids into the main hub
+        router.replace("/(tabs)");
+      }
     }
-  }, [user, loading, segments]);
+  }, [user, role, loading, segments]); // <-- Added role to dependency array
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#FF6B6B" />
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#121212",
+        }}
+      >
+        <ActivityIndicator size="large" color="#FFD700" />
       </View>
     );
   }
@@ -42,7 +56,7 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <Slot />
     </AuthProvider>
   );
 }

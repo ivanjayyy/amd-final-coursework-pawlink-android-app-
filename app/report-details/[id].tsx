@@ -1,18 +1,14 @@
-// app/report-details/[id].tsx
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  ImageStyle,
   ScrollView,
   StyleSheet,
   Text,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from "react-native";
 import { db } from "../../config/firebase";
 
@@ -75,7 +71,6 @@ export default function ReportDetailsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top Header Panel with Native Back Navigation */}
       <View style={styles.customHeader}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Text style={styles.backBtnText}>◀ BACK</Text>
@@ -141,7 +136,6 @@ export default function ReportDetailsScreen() {
             <Text style={styles.descriptionValue}>{report.description}</Text>
           </View>
 
-          {/* Contact Details Grid */}
           <View style={styles.contactPanel}>
             <Text style={styles.contactPanelTitle}>
               SECURE CONTACT INTELLIGENCE
@@ -171,18 +165,14 @@ export default function ReportDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212" } as ViewStyle,
+  container: { flex: 1, backgroundColor: "#121212" },
   centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#121212",
-  } as ViewStyle,
-  errorText: {
-    color: "#FF4A4A",
-    fontWeight: "900",
-    letterSpacing: 1,
-  } as TextStyle,
+  },
+  errorText: { color: "#FF4A4A", fontWeight: "900", letterSpacing: 1 },
   customHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -193,7 +183,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderColor: "#000000",
     gap: 12,
-  } as ViewStyle,
+  },
   backBtn: {
     backgroundColor: "#FFD700",
     borderWidth: 2,
@@ -201,51 +191,42 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 4,
-  } as ViewStyle,
-  backBtnText: { color: "#000", fontWeight: "900", fontSize: 12 } as TextStyle,
+  },
+  backBtnText: { color: "#000", fontWeight: "900", fontSize: 12 },
   headerTitle: {
     color: "#FFF",
     fontWeight: "900",
     fontSize: 13,
     letterSpacing: 1,
     flex: 1,
-  } as TextStyle,
-  scrollContainer: { paddingBottom: 40 } as ViewStyle,
+  },
+  scrollContainer: { paddingBottom: 40 },
   imageContainer: {
     borderWidth: 3,
     borderColor: "#000",
     margin: 16,
     borderRadius: 4,
     overflow: "hidden",
-  } as ViewStyle,
-  mainImage: {
-    width: "100%",
-    height: 260,
-    backgroundColor: "#222",
-  } as ImageStyle,
-  metaContainer: { paddingHorizontal: 16 } as ViewStyle,
+  },
+  mainImage: { width: "100%", height: 260, backgroundColor: "#222" },
+  metaContainer: { paddingHorizontal: 16 },
   rowJustified: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
-  } as ViewStyle,
-  petName: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#FFF",
-    letterSpacing: 1,
-  } as TextStyle,
+  },
+  petName: { fontSize: 28, fontWeight: "900", color: "#FFF", letterSpacing: 1 },
   statusBadge: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 4,
     borderWidth: 2,
     borderColor: "#000",
-  } as ViewStyle,
-  lostBadge: { backgroundColor: "#FF4A4A" } as ViewStyle,
-  foundBadge: { backgroundColor: "#2E7D32" } as ViewStyle,
-  statusText: { color: "#FFF", fontWeight: "900", fontSize: 12 } as TextStyle,
+  },
+  lostBadge: { backgroundColor: "#FF4A4A" },
+  foundBadge: { backgroundColor: "#2E7D32" },
+  statusText: { color: "#FFF", fontWeight: "900", fontSize: 12 },
   rewardBanner: {
     backgroundColor: "#FFFDE6",
     borderWidth: 2,
@@ -253,12 +234,8 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 4,
     marginBottom: 16,
-  } as ViewStyle,
-  rewardText: {
-    color: "#FF4A4A",
-    fontWeight: "900",
-    fontSize: 14,
-  } as TextStyle,
+  },
+  rewardText: { color: "#FF4A4A", fontWeight: "900", fontSize: 14 },
   infoBlock: {
     backgroundColor: "#1A1A1A",
     borderWidth: 2,
@@ -266,21 +243,21 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 4,
     marginBottom: 12,
-  } as ViewStyle,
+  },
   infoLabel: {
     color: "#FFD700",
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1,
     marginBottom: 4,
-  } as TextStyle,
-  infoValue: { color: "#FFF", fontSize: 14, fontWeight: "700" } as TextStyle,
+  },
+  infoValue: { color: "#FFF", fontSize: 14, fontWeight: "700" },
   descriptionValue: {
     color: "#DDD",
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 20,
-  } as TextStyle,
+  },
   contactPanel: {
     backgroundColor: "#FFF",
     borderWidth: 3,
@@ -289,25 +266,25 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginTop: 4,
     marginBottom: 16,
-  } as ViewStyle,
+  },
   contactPanelTitle: {
     color: "#8A2BE2",
     fontSize: 13,
     fontWeight: "900",
     marginBottom: 8,
     letterSpacing: 0.5,
-  } as TextStyle,
+  },
   contactText: {
     color: "#000",
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 4,
-  } as TextStyle,
+  },
   footerAgentText: {
     color: "#666",
     fontSize: 11,
     fontWeight: "700",
     textAlign: "center",
     marginTop: 10,
-  } as TextStyle,
+  },
 });

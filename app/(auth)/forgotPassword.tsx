@@ -1,53 +1,30 @@
-// app/(auth)/login.tsx
+// app/(auth)/forgotPassword.tsx
+import React from "react";
 import { useRouter } from "expo-router";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import React, { useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from "react-native";
-import { auth } from "../../config/firebase";
+import { useForgotPassword } from "../../hooks/useForgotPassword";
 
-export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+export default function ForgotPasswordScreen() {
   const router = useRouter();
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("ALL INTEL FIELDS MUST BE FILLED");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-    } catch (err: any) {
-      setError(err.message || "FAILED TO ACCESS AGENT PROFILE");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { email, setEmail, loading, error, handlePasswordReset } =
+    useForgotPassword();
 
   return (
     <View style={styles.container}>
-      {/* Brand Identity Panel */}
-      <View style={styles.brandPanel}>
-        <Text style={styles.brandTitleText}>PAWLINK</Text>
-        <Text style={styles.brandSubtitleText}>RESCUE NETWORK GRID</Text>
+      <View style={styles.titleBadge}>
+        <Text style={styles.titleText}>RECOVER CODES</Text>
       </View>
 
-      <Text style={styles.title}>WELCOME BACK, AGENT</Text>
+      <Text style={styles.subtitle}>
+        ENTER YOUR COMMS ROUTING EMAIL TO RESET YOUR SECRET ACCESS CODES.
+      </Text>
 
       {error ? (
         <View style={styles.errorBanner}>
@@ -58,49 +35,29 @@ export default function LoginScreen() {
       <Text style={styles.inputLabel}>COMMS ROUTING EMAIL</Text>
       <TextInput
         style={styles.input}
-        placeholder="ENTER REGISTRATION EMAIL..."
+        placeholder="ENTER REGISTERED EMAIL..."
         placeholderTextColor="#888"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
+        editable={!loading}
       />
-
-      <Text style={styles.inputLabel}>SECRET ACCESS CODE</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="ENTER PASSWORD ENTRY..."
-        placeholderTextColor="#888"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-        autoCapitalize="none"
-      />
-
-      <TouchableOpacity
-        style={styles.forgotPasswordLink}
-        onPress={() => router.push("/(auth)/forgotPassword")}
-      >
-        <Text style={styles.forgotPasswordText}>RECOVER ACCESS CODE?</Text>
-      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={handleLogin}
+        onPress={handlePasswordReset}
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#FFF" />
+          <ActivityIndicator color="#000" />
         ) : (
-          <Text style={styles.buttonText}>ACCESS GRANTED</Text>
+          <Text style={styles.buttonText}>TRANSMIT RESET LINK</Text>
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.linkButton}
-        onPress={() => router.push("/(auth)/register")}
-      >
-        <Text style={styles.linkText}>NEW AGENT? INITIALIZE SIGN UP</Text>
+      <TouchableOpacity style={styles.linkButton} onPress={() => router.back()}>
+        <Text style={styles.linkText}>RETURN TO LOGIN TERMINAL</Text>
       </TouchableOpacity>
     </View>
   );
@@ -112,49 +69,43 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 16,
     backgroundColor: "#121212",
-  } as ViewStyle,
-  brandPanel: {
+  },
+  titleBadge: {
     backgroundColor: "#FFD700",
     borderWidth: 4,
     borderColor: "#000000",
-    paddingVertical: 14,
+    paddingVertical: 10,
     alignItems: "center",
     borderRadius: 4,
-    transform: [{ rotate: "-2deg" }],
+    transform: [{ rotate: "1deg" }],
     shadowColor: "#000",
     shadowOpacity: 1,
     shadowRadius: 0,
-    shadowOffset: { width: 5, height: 5 },
-    marginBottom: 36,
-  } as ViewStyle,
-  brandTitleText: {
+    shadowOffset: { width: 4, height: 4 },
+    marginBottom: 20,
+  },
+  titleText: {
     color: "#000000",
-    fontSize: 36,
-    fontWeight: "900",
-    letterSpacing: 4,
-  } as TextStyle,
-  brandSubtitleText: {
-    color: "#000000",
-    fontSize: 11,
+    fontSize: 24,
     fontWeight: "900",
     letterSpacing: 2,
-    marginTop: -2,
-  } as TextStyle,
-  title: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    marginBottom: 24,
+  },
+  subtitle: {
+    color: "#AAA",
+    fontSize: 12,
+    fontWeight: "700",
     textAlign: "center",
-    letterSpacing: 1,
-  } as TextStyle,
+    lineHeight: 18,
+    marginBottom: 24,
+    paddingHorizontal: 10,
+  },
   inputLabel: {
     color: "#FFFFFF",
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1,
     marginBottom: 6,
-  } as TextStyle,
+  },
   input: {
     backgroundColor: "#FFFFFF",
     color: "#000000",
@@ -164,27 +115,26 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
     fontSize: 14,
     fontWeight: "700",
-    marginBottom: 16,
-  } as TextStyle,
+    marginBottom: 20,
+  },
   button: {
-    backgroundColor: "#8A2BE2",
+    backgroundColor: "#FFD700",
     padding: 16,
     borderRadius: 4,
     alignItems: "center",
-    marginTop: 12,
     borderWidth: 3,
     borderColor: "#000000",
     shadowColor: "#000",
     shadowOpacity: 1,
     shadowRadius: 0,
     shadowOffset: { width: 4, height: 4 },
-  } as ViewStyle,
+  },
   buttonText: {
-    color: "#FFFFFF",
+    color: "#000000",
     fontWeight: "900",
     fontSize: 15,
     letterSpacing: 1.5,
-  } as TextStyle,
+  },
   errorBanner: {
     backgroundColor: "#FFFDE6",
     borderWidth: 2,
@@ -192,33 +142,22 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 4,
     marginBottom: 16,
-  } as ViewStyle,
+  },
   errorText: {
     color: "#FF4A4A",
     fontWeight: "900",
     textAlign: "center",
     fontSize: 11,
     letterSpacing: 0.5,
-  } as TextStyle,
+  },
   linkButton: {
     marginTop: 24,
     alignItems: "center",
-  } as ViewStyle,
+  },
   linkText: {
     color: "#AAA",
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.5,
-  } as TextStyle,
-  forgotPasswordLink: {
-    alignSelf: "flex-end",
-    marginBottom: 24,
-    marginTop: -4,
-  } as ViewStyle,
-  forgotPasswordText: {
-    color: "#FFD700",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-  } as TextStyle,
+  },
 });
