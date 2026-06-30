@@ -27,16 +27,19 @@ export const MapFrame: React.FC<MapFrameProps> = ({
       ) : (
         <MapView
           style={styles.actualMapStyle}
-          provider={undefined}
+          provider="google" // Explicitly pass "google" string
+          mapType="standard" // Removes native Google map data textures entirely
           region={mapRegion}
           onRegionChangeComplete={onRegionChange}
           onPress={(e) => onMapPress(e.nativeEvent.coordinate)}
         >
           {/* Switched from OpenStreetMap's restricted servers to CartoDB's open-use servers */}
           <UrlTile
-            urlTemplate="https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            // Removed {r} and replaced hardcoded 'b' with {s}
+            urlTemplate="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
             maximumZ={19}
             flipY={false}
+            zIndex={1}
           />
 
           {markerCoordinate && (

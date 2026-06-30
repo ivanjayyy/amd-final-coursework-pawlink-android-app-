@@ -13,6 +13,12 @@
     },
     "android": {
       "package": "com.pawlink.android.app",
+      "permissions": ["android.permission.INTERNET"],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyFakeKeyJustToStopTheCrash12345"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -50,6 +56,12 @@
       "eas": {
         "projectId": "c8758b5d-246e-46eb-9970-1e1dbcbb909c"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c8758b5d-246e-46eb-9970-1e1dbcbb909c"
     }
   }
 }

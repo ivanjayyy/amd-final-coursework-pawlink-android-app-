@@ -6,18 +6,21 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
       // Highlight-Start: Add this android object block to force APK generation
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "preview"
       // Highlight-End
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "channel": "production"
     }
   },
   "submit": {
