@@ -17,12 +17,12 @@ interface FirebaseConfig {
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCuH84e5Z_anTshbZixLXBQgVnZROXtRXI",
-  authDomain: "pawlink-android-app.firebaseapp.com",
-  projectId: "pawlink-android-app",
-  storageBucket: "pawlink-android-app.firebasestorage.app",
-  messagingSenderId: "371560559153",
-  appId: "1:371560559153:web:3e4808d7eadc5a4f569b10",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase App

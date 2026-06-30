@@ -1,0 +1,26 @@
+{
+  "cli": {
+    "version": ">= 20.4.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      // Highlight-Start: Add this android object block to force APK generation
+      "android": {
+        "buildType": "apk"
+      }
+      // Highlight-End
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

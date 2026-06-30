@@ -1,10 +1,10 @@
-import { useState, useEffect, useContext } from "react";
-import { Alert } from "react-native";
-import { useRouter } from "expo-router";
-import * as Location from "expo-location";
-import { Region } from "react-native-maps";
 import * as ImagePicker from "expo-image-picker";
-import { collection, addDoc } from "firebase/firestore";
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
+import { addDoc, collection } from "firebase/firestore";
+import { useContext, useEffect, useState } from "react";
+import { Alert } from "react-native";
+import { Region } from "react-native-maps";
 import { db } from "../config/firebase";
 import { AuthContext } from "../context/AuthContext";
 import { validateIsRealAnimal } from "../services/aiService";
@@ -70,6 +70,10 @@ export function usePetReport() {
       reverseGeocodeCoords(initialCoords.latitude, initialCoords.longitude);
     } catch (err) {
       console.error("Geospatial fault:", err);
+      Alert.alert(
+        "GPS FAULT",
+        "Make sure system location services/GPS are enabled.",
+      );
     } finally {
       setLoadingMap(false);
     }
@@ -81,13 +85,32 @@ export function usePetReport() {
         latitude,
         longitude,
       });
+
       if (addressResponse && addressResponse.length > 0) {
         const place = addressResponse[0];
-        setResolvedAddress(
-          `${place.name ? place.name + ", " : ""}${place.district ? place.district + ", " : ""}${place.city || place.subregion || "Unknown Vector"}`,
-        );
+
+        // 1. Get Place/Village name (Ignore it if it's just a house/street number)
+        const placeName =
+          place.name && !place.name.match(/^\d+$/)
+            ? place.name
+            : place.street || "";
+
+        // 2. Get City/Town name
+        const townName = place.city || place.subregion || "";
+
+        // 3. Get District/Region name
+        const districtName = place.district || place.region || "";
+
+        // 4. Combine them into a clean, human-readable format
+        const formattedAddress = [placeName, townName, districtName]
+          .map((val) => val.trim())
+          .filter((val) => val !== "") // Remove empty segments
+          .join(", "); // Separate with commas
+
+        setResolvedAddress(formattedAddress || "Unknown Location");
       }
     } catch (err) {
+      console.error("Reverse geocoding failed:", err);
       setResolvedAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
     }
   };

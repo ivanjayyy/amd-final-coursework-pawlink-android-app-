@@ -1,39 +1,51 @@
-// app/_layout.tsx
 import { Slot, useRouter, useSegments } from "expo-router";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { ActivityIndicator, LogBox, View } from "react-native";
 import { AuthContext, AuthProvider } from "../context/AuthContext";
 
-// Ignore the specific Firebase BloomFilter warning spam
 LogBox.ignoreLogs(["@firebase/firestore: Firestore", "BloomFilter error"]);
 
 function RootLayoutNav() {
-  const { user, role, loading } = useContext(AuthContext); // <-- Pulled role from context
+  const { user, role, loading } = useContext(AuthContext);
   const segments = useSegments();
   const router = useRouter();
 
-  useEffect(() => {
-    if (loading) return;
+  // Use a ref to ensure the routing navigation engine is fully ready to take commands
+  const isMounted = useRef(false);
 
-    const currentSegments = segments;
-    const inAuthGroup = currentSegments[0] === "(auth)";
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    // 1. Strict Guard: Don't process anything while auth state layers are compiling
+    if (loading || !isMounted.current) return;
+
+    // 2. Identify precisely where the client is pointing right now
+    const inAuthGroup = segments[0] === "(auth)";
 
     if (!user) {
-      // If the agent is not signed in and not in the auth zone, send them to login
+      // 3. Force non-authenticated sessions back into the security login portal safely
       if (!inAuthGroup) {
-        router.replace("/(auth)/login");
+        // Wrap in setTimeout to ensure Expo Router has finished layout mounting tasks
+        setTimeout(() => {
+          router.replace("/(auth)/login");
+        }, 1);
       }
     } else {
-      // Agent is logged in successfully. Now check security clearance role:
+      // 4. Authenticated sessions zone checks
       if (role === "ADMIN") {
-        // If you ever build an admin panel, route them here instead:
         // router.replace("/(admin)");
       } else if (inAuthGroup) {
-        // Standard user clearance: Route away from login/register grids into the main hub
-        router.replace("/(tabs)");
+        setTimeout(() => {
+          router.replace("/(tabs)");
+        }, 1);
       }
     }
-  }, [user, role, loading, segments]); // <-- Added role to dependency array
+  }, [user, role, loading, segments]);
 
   if (loading) {
     return (
@@ -56,7 +68,7 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Slot />
+      <RootLayoutNav />
     </AuthProvider>
   );
 }

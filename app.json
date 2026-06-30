@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "pawlink-android-app",
+    "name": "PawLink",
     "slug": "pawlink-android-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.pawlink.android.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,6 +44,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c8758b5d-246e-46eb-9970-1e1dbcbb909c"
+      }
     }
   }
 }

@@ -18,7 +18,6 @@ export interface GeoNotification {
   timestamp: string;
 }
 
-// Haversine formula calculates geographical displacement distances
 function getDistanceKM(
   lat1: number,
   lon1: number,
@@ -69,12 +68,16 @@ export function useFeedNotifications() {
 
             // Trigger local alert if within a 10 KM radial vector field
             if (distance <= 10) {
+              // Fallback string if lastSeenLocation is missing from an old document
+              const locationLabel = data.lastSeenLocation || "your area";
+
               matchingAlerts.push({
                 id: `notify_${doc.id}`,
                 reportId: doc.id,
                 petName: data.petName,
                 status: data.status,
-                message: `Alert! A pet (${data.petName}) was marked ${data.status} within ${distance.toFixed(1)} KM of your location vector.`,
+                // Added the human-readable site location directly into the string:
+                message: `Alert! A pet (${data.petName}) was marked ${data.status} near ${locationLabel.toUpperCase()} [${distance.toFixed(1)} KM AWAY].`,
                 timestamp: data.createdAt || new Date().toISOString(),
               });
             }
