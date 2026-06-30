@@ -45,14 +45,31 @@ export function usePetReport() {
     try {
       const { status: permissionStatus } =
         await Location.requestForegroundPermissionsAsync();
+
+      // Default fallback coordinates (e.g., Colombo, Sri Lanka or any center point)
+      const fallbackCoords = {
+        latitude: 6.9271,
+        longitude: 79.8612,
+      };
+
       if (permissionStatus !== "granted") {
         Alert.alert(
-          "ACCESS CONTEXT DENIED",
-          "Global positioning tracking is blocked.",
+          "ACCESS DENIED",
+          "Global positioning tracking is blocked. Displaying default sector grid.",
         );
-        setResolvedAddress("Location manually designated by agent");
+
+        // Set default region instead of stopping entirely
+        setMapRegion({
+          ...fallbackCoords,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        });
+        setMarkerCoordinate(fallbackCoords);
+        setResolvedAddress("LOCATION MANUALLY DESIGNATED BY AGENT");
         return;
       }
+
+      // Existing success logic...
       const currentLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
@@ -70,10 +87,6 @@ export function usePetReport() {
       reverseGeocodeCoords(initialCoords.latitude, initialCoords.longitude);
     } catch (err) {
       console.error("Geospatial fault:", err);
-      Alert.alert(
-        "GPS FAULT",
-        "Make sure system location services/GPS are enabled.",
-      );
     } finally {
       setLoadingMap(false);
     }
@@ -89,25 +102,34 @@ export function usePetReport() {
       if (addressResponse && addressResponse.length > 0) {
         const place = addressResponse[0];
 
-        // 1. Get Place/Village name (Ignore it if it's just a house/street number)
-        const placeName =
-          place.name && !place.name.match(/^\d+$/)
-            ? place.name
-            : place.street || "";
+        // Regular expression to catch Plus Codes (e.g., "HHX4+9R9 Colombo", "6MRV+XF")
+        const plusCodeRegex = /[A-Z0-9]{4,8}\+[A-Z0-9]{2,4}/i;
 
-        // 2. Get City/Town name
-        const townName = place.city || place.subregion || "";
+        // 1. Filter out Plus Codes from the name or street fields
+        let placeName = place.name || "";
+        if (plusCodeRegex.test(placeName) || placeName.match(/^\d+$/)) {
+          // If the name is a Plus Code or just a number, drop it and use street
+          placeName =
+            place.street && !plusCodeRegex.test(place.street)
+              ? place.street
+              : "";
+        }
 
-        // 3. Get District/Region name
-        const districtName = place.district || place.region || "";
+        // 2. Fetch the standard administrative hierarchies
+        const city = place.city || place.subregion || "";
+        const district = place.district || "";
+        const region = place.region || ""; // This is typically the State / Province
+        const country = place.country || "";
 
-        // 4. Combine them into a clean, human-readable format
-        const formattedAddress = [placeName, townName, districtName]
+        // 3. Combine your target fields cleanly
+        const formattedAddress = [placeName, city, district, region, country]
           .map((val) => val.trim())
-          .filter((val) => val !== "") // Remove empty segments
-          .join(", "); // Separate with commas
+          .filter((val) => val !== "" && !plusCodeRegex.test(val)) // Final sanity check safety filter
+          .join(", ");
 
-        setResolvedAddress(formattedAddress || "Unknown Location");
+        setResolvedAddress(
+          formattedAddress || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+        );
       }
     } catch (err) {
       console.error("Reverse geocoding failed:", err);

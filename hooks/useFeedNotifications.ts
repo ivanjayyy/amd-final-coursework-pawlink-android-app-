@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
 import * as Location from "expo-location";
 import {
   collection,
-  onSnapshot,
-  query,
-  orderBy,
   limit,
+  onSnapshot,
+  orderBy,
+  query,
 } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { db } from "../config/firebase";
 
 export interface GeoNotification {
@@ -41,54 +41,76 @@ export function useFeedNotifications() {
   const [notifications, setNotifications] = useState<GeoNotification[]>([]);
 
   useEffect(() => {
-    let systemUnsubscribe: () => void;
+    // 1. Initialize as active flag to prevent state settings if unmounted early
+    let isMounted = true;
+    let systemUnsubscribe: (() => void) | null = null;
 
     async function startGeospatialListener() {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      if (status !== "granted") return;
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== "granted" || !isMounted) return;
 
-      const currentLoc = await Location.getCurrentPositionAsync({});
-      const myLat = currentLoc.coords.latitude;
-      const myLng = currentLoc.coords.longitude;
+        const currentLoc = await Location.getCurrentPositionAsync({});
+        if (!isMounted) return;
 
-      const reportsRef = collection(db, "pet_reports");
-      const q = query(reportsRef, orderBy("createdAt", "desc"), limit(10));
+        const myLat = currentLoc.coords.latitude;
+        const myLng = currentLoc.coords.longitude;
 
-      systemUnsubscribe = onSnapshot(q, (snapshot) => {
-        const matchingAlerts: GeoNotification[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.coordinates?.lat && data.coordinates?.lng) {
-            const distance = getDistanceKM(
-              myLat,
-              myLng,
-              data.coordinates.lat,
-              data.coordinates.lng,
-            );
+        const reportsRef = collection(db, "pet_reports");
+        const q = query(reportsRef, orderBy("createdAt", "desc"), limit(10));
 
-            // Trigger local alert if within a 10 KM radial vector field
-            if (distance <= 10) {
-              // Fallback string if lastSeenLocation is missing from an old document
-              const locationLabel = data.lastSeenLocation || "your area";
+        // 2. Added explicit error handler param to block system WebChannel connection crashes
+        systemUnsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            if (!isMounted) return;
 
-              matchingAlerts.push({
-                id: `notify_${doc.id}`,
-                reportId: doc.id,
-                petName: data.petName,
-                status: data.status,
-                // Added the human-readable site location directly into the string:
-                message: `Alert! A pet (${data.petName}) was marked ${data.status} near ${locationLabel.toUpperCase()} [${distance.toFixed(1)} KM AWAY].`,
-                timestamp: data.createdAt || new Date().toISOString(),
-              });
-            }
-          }
-        });
-        setNotifications(matchingAlerts);
-      });
+            const matchingAlerts: GeoNotification[] = [];
+            snapshot.forEach((doc) => {
+              const data = doc.data();
+              if (data.coordinates?.lat && data.coordinates?.lng) {
+                const distance = getDistanceKM(
+                  myLat,
+                  myLng,
+                  data.coordinates.lat,
+                  data.coordinates.lng,
+                );
+
+                // Trigger local alert if within a 10 KM radial vector field
+                if (distance <= 10) {
+                  const locationLabel = data.lastSeenLocation || "your area";
+
+                  matchingAlerts.push({
+                    id: `notify_${doc.id}`,
+                    reportId: doc.id,
+                    petName: data.petName,
+                    status: data.status,
+                    message: `Alert! A pet (${data.petName}) was marked ${data.status} near ${locationLabel.toUpperCase()} [${distance.toFixed(1)} KM AWAY].`,
+                    timestamp: data.createdAt || new Date().toISOString(),
+                  });
+                }
+              }
+            });
+            setNotifications(matchingAlerts);
+          },
+          (error) => {
+            console.log("Radar dynamic stream safely recycled:", error.message);
+          },
+        );
+      } catch (err) {
+        console.error("Radar tracking failure:", err);
+      }
     }
 
     startGeospatialListener();
-    return () => systemUnsubscribe && systemUnsubscribe();
+
+    // Clean up routine properly handles the async timing gaps
+    return () => {
+      isMounted = false;
+      if (systemUnsubscribe) {
+        systemUnsubscribe();
+      }
+    };
   }, []);
 
   return { notifications };

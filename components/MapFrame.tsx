@@ -1,6 +1,6 @@
 import React from "react";
-import { StyleSheet, View, Text, ActivityIndicator } from "react-native";
-import MapView, { Marker, Region } from "react-native-maps";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import MapView, { Marker, Region, UrlTile } from "react-native-maps";
 
 interface MapFrameProps {
   loadingMap: boolean;
@@ -27,10 +27,18 @@ export const MapFrame: React.FC<MapFrameProps> = ({
       ) : (
         <MapView
           style={styles.actualMapStyle}
+          provider={undefined}
           region={mapRegion}
           onRegionChangeComplete={onRegionChange}
           onPress={(e) => onMapPress(e.nativeEvent.coordinate)}
         >
+          {/* Switched from OpenStreetMap's restricted servers to CartoDB's open-use servers */}
+          <UrlTile
+            urlTemplate="https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            maximumZ={19}
+            flipY={false}
+          />
+
           {markerCoordinate && (
             <Marker
               coordinate={markerCoordinate}
