@@ -38,6 +38,7 @@ export default function ProfileScreen() {
   const [profilePic, setProfilePic] = useState("");
   const [fetching, setFetching] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // <-- Add this
 
   const { bookmarkedReports, loadingBookmarks, handleToggleBookmark } =
     useProfileBookmarks(user?.uid);
@@ -146,6 +147,13 @@ export default function ProfileScreen() {
   };
 
   const handleUpdateDetails = async () => {
+    // 1. If not editing, clicking the button unlocks the form fields
+    if (!isEditing) {
+      setIsEditing(true);
+      return;
+    }
+
+    // 2. If already editing, execute the save logic
     if (!username.trim() || !email.trim()) {
       Alert.alert("VALIDATION ERROR", "Form fields cannot be left blank.");
       return;
@@ -180,7 +188,9 @@ export default function ProfileScreen() {
         username: username.trim(),
         email: email.trim().toLowerCase(),
       });
+
       Alert.alert("SUCCESS", "Hero file metadata synchronized flawlessly!");
+      setIsEditing(false); // <-- Lock the form fields again on success
     } catch (err: any) {
       Alert.alert(
         "UPDATE FAILED",
@@ -211,14 +221,16 @@ export default function ProfileScreen() {
 
       <View style={styles.avatarSection}>
         <TouchableOpacity
-          style={styles.avatarFrame}
+          style={[styles.avatarFrame, !isEditing && { opacity: 0.8 }]}
           onPress={changeProfilePicture}
-          disabled={updating}
+          disabled={updating || !isEditing} // <-- Disable when not editing
         >
           <Image source={{ uri: profilePic }} style={styles.largeAvatar} />
-          <View style={styles.editBadge}>
-            <Text style={styles.editBadgeText}>ALTER</Text>
-          </View>
+          {isEditing && ( // <-- Only show the ALTER badge when editing is enabled
+            <View style={styles.editBadge}>
+              <Text style={styles.editBadgeText}>ALTER</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -227,17 +239,25 @@ export default function ProfileScreen() {
         setUsername={setUsername}
         email={email}
         setEmail={setEmail}
+        editable={isEditing} // <-- Pass down the edit state to your inputs
       />
 
       <TouchableOpacity
-        style={styles.saveButton}
+        style={[
+          styles.saveButton,
+          !isEditing && { backgroundColor: "#1A1A1A" },
+        ]} // Optional styling change when viewing
         onPress={handleUpdateDetails}
         disabled={updating}
       >
         {updating ? (
           <ActivityIndicator color="#000" />
         ) : (
-          <Text style={styles.saveButtonText}>SAVE CHANGELOG</Text>
+          <Text
+            style={[styles.saveButtonText, !isEditing && { color: "#FFD700" }]}
+          >
+            {isEditing ? "SAVE CHANGELOG" : "UPDATE PROFILE"}
+          </Text>
         )}
       </TouchableOpacity>
 

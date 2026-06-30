@@ -6,6 +6,7 @@ interface ProfileFormFieldsProps {
   setUsername: (text: string) => void;
   email: string;
   setEmail: (text: string) => void;
+  editable: boolean; // <-- Added to the type definition
 }
 
 export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
@@ -13,27 +14,30 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
   setUsername,
   email,
   setEmail,
+  editable, // <-- Destructured here
 }) => {
   return (
     <View>
       <Text style={styles.sectionLabel}>IDENTITY CALLSIGN</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, !editable && styles.disabledInput]} // <-- Added dynamic styling
         value={username}
         onChangeText={setUsername}
         placeholder="ENTER HERO ALIAS..."
         placeholderTextColor="#888"
+        editable={editable} // <-- Passed down to the core input
       />
 
       <Text style={styles.sectionLabel}>COMMS ROUTING EMAIL</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, !editable && styles.disabledInput]} // <-- Added dynamic styling
         value={email}
         onChangeText={setEmail}
         placeholder="ENTER NEW FREQUENCY..."
         placeholderTextColor="#888"
         keyboardType="email-address"
         autoCapitalize="none"
+        editable={editable} // <-- Passed down to the core input
       />
     </View>
   );
@@ -58,5 +62,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     marginBottom: 16,
+  },
+  // Added helper styling to indicate the field is locked/disabled
+  disabledInput: {
+    backgroundColor: "#1A1A1A",
+    color: "#666666",
+    borderColor: "#333333",
   },
 });

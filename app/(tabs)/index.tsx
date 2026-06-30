@@ -1,12 +1,3 @@
-import React, { useContext, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
 import { useRouter } from "expo-router";
 import { signOut } from "firebase/auth";
 import {
@@ -19,11 +10,21 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { auth, db } from "../../config/firebase";
-import { AuthContext } from "../../context/AuthContext";
-import { useFeedFilter, PetReport } from "../../hooks/useFeedFilter";
+import React, { useContext, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Alert,
+} from "react-native";
 import { FeedFilterPanel } from "../../components/FeedFilterPanel";
 import { ReportCard } from "../../components/ReportCard";
+import { auth, db } from "../../config/firebase";
+import { AuthContext } from "../../context/AuthContext";
+import { PetReport, useFeedFilter } from "../../hooks/useFeedFilter";
 
 export default function FeedScreen() {
   const { user } = useContext(AuthContext);
@@ -74,6 +75,25 @@ export default function FeedScreen() {
     };
   }, [user]);
 
+  const handleSignOut = () => {
+    Alert.alert(
+      "Leave PawLink?",
+      "Are you sure you want to sign out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Leave",
+          style: "destructive", // Gives it a red highlight on iOS
+          onPress: () => signOut(auth),
+        },
+      ],
+      { cancelable: true },
+    );
+  };
+
   const handleToggleBookmark = async (reportId: string) => {
     if (!user) return;
     const bookmarkDocId = `${user.uid}_${reportId}`;
@@ -112,7 +132,7 @@ export default function FeedScreen() {
           <Text style={styles.headerTitle}>COMMUNITY ALERTS</Text>
           <TouchableOpacity
             style={styles.signOutBtn}
-            onPress={() => signOut(auth)}
+            onPress={handleSignOut}
           >
             <Text style={styles.signOutText}>LEAVE</Text>
           </TouchableOpacity>
