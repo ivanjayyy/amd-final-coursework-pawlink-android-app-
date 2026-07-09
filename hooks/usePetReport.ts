@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { addDoc, collection } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import { Alert } from "react-native";
-import { Region } from "react-native-maps";
+import { Region } from "../components/MapFrame";
 import { db } from "../config/firebase";
 import { AuthContext } from "../context/AuthContext";
 import { validateIsRealAnimal } from "../services/aiService";

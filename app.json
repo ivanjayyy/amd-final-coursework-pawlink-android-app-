@@ -14,11 +14,6 @@
     "android": {
       "package": "com.pawlink.android.app",
       "permissions": ["android.permission.INTERNET"],
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyFakeKeyJustToStopTheCrash12345"
-        }
-      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
