@@ -12,6 +12,8 @@
    ![PawLink banner](./assets/screenshots/banner.png)
 -->
 
+[PawLink banner](./assets/screenshots/banner.png)
+
 ---
 
 ## 📋 Table of Contents
@@ -48,18 +50,21 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
 ## ✨ Features
 
 ### 🔐 Authentication
+
 - Email/password **sign up** with profile picture upload
 - **Login** with session persistence (stays logged in between app launches)
 - **Forgot password** flow with email reset link
 - Firebase-backed auth with `AsyncStorage` persistence for React Native
 
 ### 🗺️ Free Interactive Maps (Leaflet + OpenStreetMap)
+
 - No Google Maps API key required — map tiles are fetched for free from `tile.openstreetmap.org`
 - Tap-to-drop or drag a marker to pin the exact last-seen / found location
 - Live "use my current location" support via device GPS
 - Map recenters and updates smoothly without remounting the WebView
 
 ### 📝 Report a Lost or Found Pet
+
 - Toggle between **Lost** / **Found** status
 - Species picker (Dog, Cat, Rabbit, Bird, Other), breed, and free-text description
 - Photo upload from camera or gallery
@@ -73,7 +78,10 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/report-form.png
 -->
 
+[Report Form](./assets/screenshots/report-form.jpg)
+
 ### 📡 Real-Time Community Feed
+
 - Live-updating list of all reports (Firebase Firestore `onSnapshot`)
 - Filter by status (All / Lost / Found) and species
 - Search by pet name, breed, location, or description
@@ -84,7 +92,10 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/home-feed.png
 -->
 
+[Home Feed](./assets/screenshots/home-feed.jpeg)
+
 ### 🔔 Proximity Alerts
+
 - Calculates real-world distance (Haversine formula) between the user's current GPS position and each new report
 - Automatically surfaces a notification when a lost/found pet appears within a **10 km** radius
 - Dedicated notifications screen listing all nearby alerts
@@ -94,7 +105,10 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/notifications.png
 -->
 
+[Notifications](./assets/screenshots/notifications.jpeg)
+
 ### 📄 Report Details & Flyer Generator
+
 - Full detail view for any report: photo, description, location, contact info, reward
 - **One-tap PDF flyer generation** — builds a print-ready, styled "MISSING/FOUND PET" flyer (A4) and opens the native share sheet so it can be printed, saved, or sent via WhatsApp/email/etc.
 
@@ -103,7 +117,12 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/report-details.png and assets/screenshots/flyer-pdf.png
 -->
 
+[Report Details](./assets/screenshots/report-details.jpeg)
+
+[Flyer Generation](./assets/screenshots/flyer.jpeg)
+
 ### 👤 Profile & My Reports
+
 - Editable profile (username, email, profile photo) with re-authentication for sensitive changes
 - **My Reports** tab: view, edit, or delete your own submitted reports
 - **Bookmarks**: save other users' reports to a personal grid for quick access later
@@ -115,21 +134,25 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/profile.png
 -->
 
+[Profile](./assets/screenshots/profile.jpeg)
+
+[My Reports](./assets/screenshots/my-reports.jpg)
+
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | [Expo](https://expo.dev) (Expo Router, file-based routing) + React Native |
-| Language | TypeScript |
-| Auth & Database | Firebase Authentication + Cloud Firestore |
-| Maps | Leaflet.js + OpenStreetMap tiles, rendered via `react-native-webview` (no paid maps API) |
-| AI | Google Gemini (`@google/genai`) for image content validation |
-| Image Hosting | ImgBB API |
-| PDF / Flyers | `expo-print` + `expo-sharing` |
-| Location | `expo-location` |
-| UI | React Native core components, `@expo/vector-icons` |
+| Layer           | Technology                                                                               |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| Framework       | [Expo](https://expo.dev) (Expo Router, file-based routing) + React Native                |
+| Language        | TypeScript                                                                               |
+| Auth & Database | Firebase Authentication + Cloud Firestore                                                |
+| Maps            | Leaflet.js + OpenStreetMap tiles, rendered via `react-native-webview` (no paid maps API) |
+| AI              | Google Gemini (`@google/genai`) for image content validation                             |
+| Image Hosting   | ImgBB API                                                                                |
+| PDF / Flyers    | `expo-print` + `expo-sharing`                                                            |
+| Location        | `expo-location`                                                                          |
+| UI              | React Native core components, `@expo/vector-icons`                                       |
 
 ---
 
@@ -137,27 +160,21 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
 
 > Replace the placeholders below with real screenshots once available. Suggested shots to capture (see inline notes above for exact placement):
 
-| Screen | Suggested Screenshot |
-|---|---|
-| Login / Register | Branded auth screen with the PawLink logo panel |
-| Home Feed | Feed with report cards + filter panel open |
-| Report a Pet | Form mid-fill with photo attached + map pin dropped |
-| Report Details | Full detail view of a single lost/found report |
-| Notifications | List of nearby pet alerts |
-| Profile | Profile screen with bookmarks grid and "My Reports" |
-| Flyer PDF | The generated printable flyer, opened in the share sheet |
+| Screen           | Suggested Screenshot                                     |
+| ---------------- | -------------------------------------------------------- |
+| Login / Register | Branded auth screen with the PawLink logo panel          |
+| Home Feed        | Feed with report cards + filter panel open               |
+| Report a Pet     | Form mid-fill with photo attached + map pin dropped      |
+| Report Details   | Full detail view of a single lost/found report           |
+| Notifications    | List of nearby pet alerts                                |
+| Profile          | Profile screen with bookmarks grid and "My Reports"      |
+| Flyer PDF        | The generated printable flyer, opened in the share sheet |
 
-```
-assets/
-  screenshots/
-    banner.png
-    home-feed.png
-    report-form.png
-    report-details.png
-    notifications.png
-    profile.png
-    flyer-pdf.png
-```
+[Login](./assets/screenshots/login.jpeg)
+
+[Register](./assets/screenshots/register.jpeg)
+
+[Forgot Password](./assets/screenshots/forgot-password.jpeg)
 
 ---
 
@@ -265,11 +282,11 @@ This opens the Expo developer tools in your terminal/browser, where you can laun
 
 This project uses [EAS Build](https://docs.expo.dev/build/introduction/) with three configured profiles (`eas.json`):
 
-| Profile | Purpose |
-|---|---|
-| `development` | Internal development client build |
-| `preview` | Internal APK build for QA/testing |
-| `production` | Store-ready build with auto-incrementing version |
+| Profile       | Purpose                                          |
+| ------------- | ------------------------------------------------ |
+| `development` | Internal development client build                |
+| `preview`     | Internal APK build for QA/testing                |
+| `production`  | Store-ready build with auto-incrementing version |
 
 ```bash
 # Example: build a preview APK
