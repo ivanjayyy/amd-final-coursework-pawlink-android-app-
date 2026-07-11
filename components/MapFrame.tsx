@@ -129,7 +129,7 @@ export const MapFrame: React.FC<MapFrameProps> = ({
     <View style={styles.mapContainerFrame}>
       {loadingMap || !mapRegion ? (
         <View style={styles.mapLoaderPlaceholder}>
-          <ActivityIndicator size="small" color="#FFD700" />
+          <ActivityIndicator size="small" color="#FF9F43" />
           <Text style={styles.mapLoaderText}>CALIBRATING COORD ARRAYS...</Text>
         </View>
       ) : (
@@ -152,9 +152,9 @@ export const MapFrame: React.FC<MapFrameProps> = ({
 const styles = StyleSheet.create({
   mapContainerFrame: {
     height: 200,
-    borderWidth: 3,
+    borderWidth: 1.5,
     borderColor: "#000000",
-    borderRadius: 4,
+    borderRadius: 12,
     overflow: "hidden",
     backgroundColor: "#1A1A1A",
     shadowColor: "#000",

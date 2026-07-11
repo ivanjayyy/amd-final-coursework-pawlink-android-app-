@@ -54,7 +54,7 @@ export default function ReportDetailsScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#FFD700" />
+        <ActivityIndicator size="large" color="#FF9F43" />
       </View>
     );
   }
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#121212",
   },
-  errorText: { color: "#FF4A4A", fontWeight: "900", letterSpacing: 1 },
+  errorText: { color: "#FF6B6B", fontWeight: "900", letterSpacing: 1 },
   customHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -180,17 +180,17 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
     paddingHorizontal: 16,
-    borderBottomWidth: 4,
+    borderBottomWidth: 1,
     borderColor: "#000000",
     gap: 12,
   },
   backBtn: {
-    backgroundColor: "#FFD700",
-    borderWidth: 2,
+    backgroundColor: "#FF9F43",
+    borderWidth: 1,
     borderColor: "#000",
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 4,
+    borderRadius: 12,
   },
   backBtnText: { color: "#000", fontWeight: "900", fontSize: 12 },
   headerTitle: {
@@ -202,10 +202,10 @@ const styles = StyleSheet.create({
   },
   scrollContainer: { paddingBottom: 40 },
   imageContainer: {
-    borderWidth: 3,
+    borderWidth: 1.5,
     borderColor: "#000",
     margin: 16,
-    borderRadius: 4,
+    borderRadius: 12,
     overflow: "hidden",
   },
   mainImage: { width: "100%", height: 260, backgroundColor: "#222" },
@@ -220,32 +220,32 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 4,
-    borderWidth: 2,
+    borderRadius: 12,
+    borderWidth: 1,
     borderColor: "#000",
   },
-  lostBadge: { backgroundColor: "#FF4A4A" },
-  foundBadge: { backgroundColor: "#2E7D32" },
+  lostBadge: { backgroundColor: "#FF6B6B" },
+  foundBadge: { backgroundColor: "#4CAF50" },
   statusText: { color: "#FFF", fontWeight: "900", fontSize: 12 },
   rewardBanner: {
-    backgroundColor: "#FFFDE6",
-    borderWidth: 2,
+    backgroundColor: "#241A14",
+    borderWidth: 1,
     borderColor: "#000",
     padding: 12,
-    borderRadius: 4,
+    borderRadius: 12,
     marginBottom: 16,
   },
-  rewardText: { color: "#FF4A4A", fontWeight: "900", fontSize: 14 },
+  rewardText: { color: "#FF6B6B", fontWeight: "900", fontSize: 14 },
   infoBlock: {
     backgroundColor: "#1A1A1A",
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: "#000",
     padding: 14,
-    borderRadius: 4,
+    borderRadius: 12,
     marginBottom: 12,
   },
   infoLabel: {
-    color: "#FFD700",
+    color: "#FF9F43",
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1,
@@ -253,29 +253,29 @@ const styles = StyleSheet.create({
   },
   infoValue: { color: "#FFF", fontSize: 14, fontWeight: "700" },
   descriptionValue: {
-    color: "#DDD",
+    color: "#CCCCCC",
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 20,
   },
   contactPanel: {
-    backgroundColor: "#FFF",
-    borderWidth: 3,
-    borderColor: "#000",
+    backgroundColor: "#1E1E1E",
+    borderWidth: 1.5,
+    borderColor: "#2A2A2A",
     padding: 14,
-    borderRadius: 4,
+    borderRadius: 12,
     marginTop: 4,
     marginBottom: 16,
   },
   contactPanelTitle: {
-    color: "#8A2BE2",
+    color: "#2DD4BF",
     fontSize: 13,
     fontWeight: "900",
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   contactText: {
-    color: "#000",
+    color: "#F5F5F5",
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 4,

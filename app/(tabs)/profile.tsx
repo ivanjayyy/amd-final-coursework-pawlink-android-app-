@@ -204,7 +204,7 @@ export default function ProfileScreen() {
   if (fetching) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#FFD700" />
+        <ActivityIndicator size="large" color="#FF9F43" />
       </View>
     );
   }
@@ -254,7 +254,7 @@ export default function ProfileScreen() {
           <ActivityIndicator color="#000" />
         ) : (
           <Text
-            style={[styles.saveButtonText, !isEditing && { color: "#FFD700" }]}
+            style={[styles.saveButtonText, !isEditing && { color: "#FF9F43" }]}
           >
             {isEditing ? "SAVE CHANGELOG" : "UPDATE PROFILE"}
           </Text>
@@ -272,7 +272,7 @@ export default function ProfileScreen() {
       {loadingBookmarks ? (
         <ActivityIndicator
           size="small"
-          color="#FFD700"
+          color="#FF9F43"
           style={{ marginVertical: 20 }}
         />
       ) : bookmarkedReports.length === 0 ? (
@@ -321,18 +321,18 @@ const styles = StyleSheet.create({
   contentContainer: { padding: 16, paddingBottom: 40 },
   headerBar: {
     backgroundColor: "#1A1A1A",
-    borderWidth: 3,
+    borderWidth: 1.5,
     borderColor: "#000000",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 4,
+    borderRadius: 12,
     marginBottom: 24,
     transform: [{ rotate: "0.5deg" }],
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#FFD700",
+    color: "#FF9F43",
     letterSpacing: 2,
     textAlign: "center",
   },
@@ -344,10 +344,10 @@ const styles = StyleSheet.create({
   },
   avatarSection: { alignItems: "center", marginBottom: 24 },
   avatarFrame: {
-    borderWidth: 4,
-    borderColor: "#000000",
-    borderRadius: 4,
-    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: "#333333",
+    borderRadius: 999,
+    backgroundColor: "#1E1E1E",
     padding: 4,
     shadowColor: "#000",
     shadowOpacity: 1,
@@ -355,17 +355,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 5, height: 5 },
     position: "relative",
   },
-  largeAvatar: { width: 130, height: 130, backgroundColor: "#EAEAEA" },
+  largeAvatar: { width: 130, height: 130, backgroundColor: "#333333" },
   editBadge: {
     position: "absolute",
     bottom: -6,
     right: -6,
-    backgroundColor: "#FFD700",
+    backgroundColor: "#FF9F43",
     paddingVertical: 4,
     paddingHorizontal: 8,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: "#000000",
-    borderRadius: 2,
+    borderRadius: 8,
   },
   editBadgeText: {
     color: "#000000",
@@ -374,12 +374,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   saveButton: {
-    backgroundColor: "#8A2BE2",
+    backgroundColor: "#2DD4BF",
     padding: 16,
-    borderRadius: 4,
+    borderRadius: 12,
     alignItems: "center",
     marginTop: 12,
-    borderWidth: 3,
+    borderWidth: 1.5,
     borderColor: "#000000",
     shadowColor: "#000",
     shadowOpacity: 1,
@@ -394,14 +394,14 @@ const styles = StyleSheet.create({
   },
   tabSectionHeader: {
     marginTop: 36,
-    borderBottomWidth: 3,
+    borderBottomWidth: 1,
     borderColor: "#000000",
     flexDirection: "row",
     marginBottom: 16,
   },
   activeTabIndicator: {
     backgroundColor: "#1A1A1A",
-    borderWidth: 3,
+    borderWidth: 1.5,
     borderColor: "#000",
     borderBottomWidth: 0,
     paddingVertical: 10,
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     marginBottom: -3,
   },
   tabHeaderText: {
-    color: "#FFD700",
+    color: "#FF9F43",
     fontWeight: "900",
     fontSize: 12,
     letterSpacing: 1,
@@ -423,9 +423,9 @@ const styles = StyleSheet.create({
   },
   emptyGridPlaceholder: {
     backgroundColor: "#1A1A1A",
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: "#333",
-    borderRadius: 4,
+    borderRadius: 12,
     padding: 24,
     alignItems: "center",
   },
@@ -437,11 +437,11 @@ const styles = StyleSheet.create({
   },
   thickDivider: { height: 4, backgroundColor: "#000000", marginVertical: 32 },
   deleteButton: {
-    backgroundColor: "#FF4A4A",
-    borderWidth: 3,
+    backgroundColor: "#FF6B6B",
+    borderWidth: 1.5,
     borderColor: "#000000",
     padding: 16,
-    borderRadius: 4,
+    borderRadius: 12,
     alignItems: "center",
     shadowColor: "#000",
     shadowOpacity: 1,

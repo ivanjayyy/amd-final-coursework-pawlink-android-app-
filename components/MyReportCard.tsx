@@ -54,7 +54,7 @@ export const ReportCard: React.FC<ReportCardProps> = ({
 
         {isLost && item.reward ? (
           <Text style={styles.detailsText}>
-            <Text style={[styles.boldText, { color: "#FF4A4A" }]}>
+            <Text style={[styles.boldText, { color: "#FF6B6B" }]}>
               REWARD:{" "}
             </Text>
             {item.reward.toUpperCase()}
@@ -97,19 +97,19 @@ export const ReportCard: React.FC<ReportCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 4,
+    backgroundColor: "#1E1E1E",
+    borderRadius: 12,
     marginBottom: 20,
-    borderWidth: 3,
-    borderColor: "#000000",
+    borderWidth: 1.5,
+    borderColor: "#2A2A2A",
     overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 1,
     shadowRadius: 0,
     shadowOffset: { width: 5, height: 5 },
   },
-  imageContainer: { borderBottomWidth: 3, borderColor: "#000000" },
-  cardImage: { width: "100%", height: 150, backgroundColor: "#EAEAEA" },
+  imageContainer: { borderBottomWidth: 1.5, borderColor: "#2A2A2A" },
+  cardImage: { width: "100%", height: 150, backgroundColor: "#333333" },
   cardContent: { padding: 14 },
   cardHeader: {
     flexDirection: "row",
@@ -120,18 +120,18 @@ const styles = StyleSheet.create({
   petName: {
     fontSize: 20,
     fontWeight: "900",
-    color: "#000000",
+    color: "#F5F5F5",
     letterSpacing: 1,
   },
   statusBadge: {
     paddingVertical: 4,
     paddingHorizontal: 10,
-    borderRadius: 4,
-    borderWidth: 2,
+    borderRadius: 12,
+    borderWidth: 1,
     borderColor: "#000",
   },
-  lostBadge: { backgroundColor: "#FF4A4A" },
-  foundBadge: { backgroundColor: "#2E7D32" },
+  lostBadge: { backgroundColor: "#FF6B6B" },
+  foundBadge: { backgroundColor: "#4CAF50" },
   statusText: {
     color: "#fff",
     fontWeight: "900",
@@ -139,30 +139,30 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   detailsText: {
-    color: "#222222",
+    color: "#CCCCCC",
     fontSize: 13,
     marginBottom: 4,
     fontWeight: "600",
   },
-  boldText: { color: "#000000", fontWeight: "900" },
+  boldText: { color: "#F5F5F5", fontWeight: "900" },
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderTopWidth: 2,
-    borderTopColor: "#000000",
+    borderTopWidth: 1.5,
+    borderTopColor: "#2A2A2A",
     paddingTop: 12,
     marginTop: 12,
   },
-  footerDate: { color: "#666", fontSize: 11, fontWeight: "700" },
+  footerDate: { color: "#999999", fontSize: 11, fontWeight: "700" },
   actionButtonGroup: { flexDirection: "row", gap: 6, alignItems: "center" },
   flyerButton: {
-    backgroundColor: "#FFD700",
-    borderWidth: 2,
+    backgroundColor: "#FF9F43",
+    borderWidth: 1,
     borderColor: "#000000",
     paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 4,
+    borderRadius: 12,
     shadowColor: "#000",
     shadowOpacity: 1,
     shadowRadius: 0,
@@ -170,12 +170,12 @@ const styles = StyleSheet.create({
   },
   flyerButtonText: { color: "#000", fontSize: 11, fontWeight: "900" },
   updateButton: {
-    backgroundColor: "#8A2BE2",
-    borderWidth: 2,
+    backgroundColor: "#2DD4BF",
+    borderWidth: 1,
     borderColor: "#000000",
     paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 4,
+    borderRadius: 12,
     shadowColor: "#000",
     shadowOpacity: 1,
     shadowRadius: 0,
@@ -183,12 +183,12 @@ const styles = StyleSheet.create({
   },
   updateButtonText: { color: "#FFF", fontSize: 11, fontWeight: "900" },
   deleteButton: {
-    backgroundColor: "#FF4A4A",
-    borderWidth: 2,
+    backgroundColor: "#FF6B6B",
+    borderWidth: 1,
     borderColor: "#000000",
     paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 4,
+    borderRadius: 12,
     shadowColor: "#000",
     shadowOpacity: 1,
     shadowRadius: 0,

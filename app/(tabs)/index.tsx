@@ -150,7 +150,7 @@ export default function FeedScreen() {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#FFD700" />
+          <ActivityIndicator size="large" color="#FF9F43" />
         </View>
       ) : filteredReports.length === 0 ? (
         <View style={styles.centered}>
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 6,
     backgroundColor: "#1A1A1A",
-    borderBottomWidth: 4,
+    borderBottomWidth: 1,
     borderColor: "#000000",
   },
   logoRow: {
@@ -192,12 +192,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoBadge: {
-    backgroundColor: "#FFD700",
-    borderWidth: 4,
+    backgroundColor: "#FF9F43",
+    borderWidth: 1.5,
     borderColor: "#000000",
     paddingVertical: 4,
     paddingHorizontal: 16,
-    borderRadius: 4,
+    borderRadius: 12,
     transform: [{ rotate: "-1deg" }],
   },
   logoText: {
@@ -207,10 +207,10 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
   },
   alertIconBtn: {
-    backgroundColor: "#8A2BE2",
-    borderWidth: 3,
+    backgroundColor: "#2DD4BF",
+    borderWidth: 1.5,
     borderColor: "#000",
-    borderRadius: 4,
+    borderRadius: 12,
     width: 42,
     height: 42,
     justifyContent: "center",
@@ -230,12 +230,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   signOutBtn: {
-    backgroundColor: "#FF4A4A",
-    borderWidth: 2,
+    backgroundColor: "#FF6B6B",
+    borderWidth: 1,
     borderColor: "#000",
     paddingVertical: 4,
     paddingHorizontal: 10,
-    borderRadius: 4,
+    borderRadius: 12,
   },
   signOutText: { color: "#000", fontSize: 11, fontWeight: "900" },
   centered: {
@@ -244,6 +244,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 40,
   },
-  emptyText: { color: "#FFD700", fontSize: 13, fontWeight: "900" },
+  emptyText: { color: "#FF9F43", fontSize: 13, fontWeight: "900" },
   listContainer: { padding: 16, paddingBottom: 40 },
 });

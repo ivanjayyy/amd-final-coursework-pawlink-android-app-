@@ -57,7 +57,7 @@ function RootLayoutNav() {
           backgroundColor: "#121212",
         }}
       >
-        <ActivityIndicator size="large" color="#FFD700" />
+        <ActivityIndicator size="large" color="#FF9F43" />
       </View>
     );
   }

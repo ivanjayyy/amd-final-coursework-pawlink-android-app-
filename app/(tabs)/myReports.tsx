@@ -105,7 +105,7 @@ export default function MyReportsScreen() {
 
       {loading ? (
         <View style={styles.centerLayout}>
-          <ActivityIndicator size="large" color="#FFD700" />
+          <ActivityIndicator size="large" color="#FF9F43" />
         </View>
       ) : myReports.length === 0 ? (
         <View style={styles.centerLayout}>
@@ -145,13 +145,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     backgroundColor: "#1A1A1A",
-    borderBottomWidth: 4,
+    borderBottomWidth: 1,
     borderColor: "#000000",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "900",
-    color: "#FFD700",
+    color: "#FF9F43",
     letterSpacing: 2,
   },
   centerLayout: {
