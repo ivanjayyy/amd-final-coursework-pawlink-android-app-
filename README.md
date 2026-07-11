@@ -56,6 +56,12 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
 - **Forgot password** flow with email reset link
 - Firebase-backed auth with `AsyncStorage` persistence for React Native
 
+![Login](./assets/screenshots/login.jpeg)
+
+![Register](./assets/screenshots/register.jpeg)
+
+![Forgot Password](./assets/screenshots/forgot-password.jpeg)
+
 ### 🗺️ Free Interactive Maps (Leaflet + OpenStreetMap)
 
 - No Google Maps API key required — map tiles are fetched for free from `tile.openstreetmap.org`
@@ -158,8 +164,6 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
 
 ## 📸 Screenshots
 
-> Replace the placeholders below with real screenshots once available. Suggested shots to capture (see inline notes above for exact placement):
-
 | Screen           | Suggested Screenshot                                     |
 | ---------------- | -------------------------------------------------------- |
 | Login / Register | Branded auth screen with the PawLink logo panel          |
@@ -169,12 +173,6 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
 | Notifications    | List of nearby pet alerts                                |
 | Profile          | Profile screen with bookmarks grid and "My Reports"      |
 | Flyer PDF        | The generated printable flyer, opened in the share sheet |
-
-![Login](./assets/screenshots/login.jpeg)
-
-![Register](./assets/screenshots/register.jpeg)
-
-![Forgot Password](./assets/screenshots/forgot-password.jpeg)
 
 ---
 
