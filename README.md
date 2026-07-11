@@ -12,7 +12,7 @@
    ![PawLink banner](./assets/screenshots/banner.png)
 -->
 
-[PawLink banner](./assets/screenshots/banner.png)
+![PawLink banner](./assets/screenshots/banner.png)
 
 ---
 
@@ -78,7 +78,7 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/report-form.png
 -->
 
-[Report Form](./assets/screenshots/report-form.jpg)
+![Report Form](./assets/screenshots/report-form.jpg)
 
 ### 📡 Real-Time Community Feed
 
@@ -92,7 +92,7 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/home-feed.png
 -->
 
-[Home Feed](./assets/screenshots/home-feed.jpeg)
+![Home Feed](./assets/screenshots/home-feed.jpeg)
 
 ### 🔔 Proximity Alerts
 
@@ -105,7 +105,7 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/notifications.png
 -->
 
-[Notifications](./assets/screenshots/notifications.jpeg)
+![Notifications](./assets/screenshots/notifications.jpeg)
 
 ### 📄 Report Details & Flyer Generator
 
@@ -117,9 +117,9 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/report-details.png and assets/screenshots/flyer-pdf.png
 -->
 
-[Report Details](./assets/screenshots/report-details.jpeg)
+![Report Details](./assets/screenshots/report-details.jpeg)
 
-[Flyer Generation](./assets/screenshots/flyer.jpeg)
+![Flyer Generation](./assets/screenshots/flyer.jpeg)
 
 ### 👤 Profile & My Reports
 
@@ -134,9 +134,9 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
    Save as assets/screenshots/profile.png
 -->
 
-[Profile](./assets/screenshots/profile.jpeg)
+![Profile](./assets/screenshots/profile.jpeg)
 
-[My Reports](./assets/screenshots/my-reports.jpg)
+![My Reports](./assets/screenshots/my-reports.jpg)
 
 ---
 
@@ -170,11 +170,11 @@ The app uses **free, no-API-key OpenStreetMap tiles rendered via Leaflet inside 
 | Profile          | Profile screen with bookmarks grid and "My Reports"      |
 | Flyer PDF        | The generated printable flyer, opened in the share sheet |
 
-[Login](./assets/screenshots/login.jpeg)
+![Login](./assets/screenshots/login.jpeg)
 
-[Register](./assets/screenshots/register.jpeg)
+![Register](./assets/screenshots/register.jpeg)
 
-[Forgot Password](./assets/screenshots/forgot-password.jpeg)
+![Forgot Password](./assets/screenshots/forgot-password.jpeg)
 
 ---
 
