@@ -14,6 +14,10 @@
 
 ![PawLink banner](./assets/screenshots/banner.png)
 
+> Download PawLink APK :
+
+![APK QR CODE](./assets/screenshots/apk-qr.png)
+
 ---
 
 ## 📋 Table of Contents
